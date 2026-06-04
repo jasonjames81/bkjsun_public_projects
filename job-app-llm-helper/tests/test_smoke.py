@@ -117,6 +117,90 @@ def test_generate_requires_background(client):
     assert res.get_json() is not None
 
 
+def test_get_questions_route(client, monkeypatch):
+    captured = {}
+
+    def fake(prompt, **kw):
+        captured["prompt"] = prompt
+        return json.dumps(
+            ["What algorithm did you design?", "Describe a hard delivery."]
+        )
+
+    monkeypatch.setattr(generator, "call_llm", fake)
+    res = client.post("/get-questions", json={**JOB, "profile": SAMPLE_PROFILE})
+    body = res.get_json()
+    assert body["success"] and len(body["questions"]) == 2
+    assert "Ada Lovelace" in captured["prompt"] and "Jason" not in captured["prompt"]
+
+
+def test_clarify_application_questions_route(client, monkeypatch):
+    monkeypatch.setattr(
+        generator,
+        "call_llm",
+        lambda prompt, **kw: json.dumps({"clarifying_questions": ["Which year?"]}),
+    )
+    res = client.post(
+        "/clarify-application-questions",
+        json={**JOB, "profile": SAMPLE_PROFILE, "questions": ["Why us? (150 words)"]},
+    )
+    body = res.get_json()
+    assert body["success"] and body["clarifying_questions"] == ["Which year?"]
+
+
+def test_answer_application_questions_route(client, monkeypatch):
+    captured = {}
+
+    def fake(prompt, **kw):
+        captured["prompt"] = prompt
+        return json.dumps(
+            [{"question": "Why us?", "answer": "Because of the machines."}]
+        )
+
+    monkeypatch.setattr(generator, "call_llm", fake)
+    res = client.post(
+        "/answer-application-questions",
+        json={
+            **JOB,
+            "profile": SAMPLE_PROFILE,
+            "questions": [
+                {"question": "Why us?", "limit": {"value": 150, "unit": "words"}}
+            ],
+            "clarifying_answers": [{"question": "Which year?", "answer": "1843"}],
+        },
+    )
+    body = res.get_json()
+    assert (
+        body["success"] and body["answers"][0]["answer"] == "Because of the machines."
+    )
+    # length cap + clarifying context reached the prompt
+    assert "150 words" in captured["prompt"] and "1843" in captured["prompt"]
+
+
+def test_generate_includes_experience_and_application_answers(client, monkeypatch):
+    captured = {}
+
+    def fake(prompt, **kw):
+        captured.setdefault("prompts", []).append(prompt)
+        return "## 1. TAILORED COVER LETTER\n\nDear Hiring Manager,\n\nBody.\n\nSincerely,\nAda\n\n## 2. RESUME TAILORING SUGGESTIONS\n- x\n"
+
+    monkeypatch.setattr(generator, "call_llm", fake)
+    res = client.post(
+        "/generate",
+        json={
+            **JOB,
+            "profile": SAMPLE_PROFILE,
+            "experience_answers": [
+                {"question": "Hardest project?", "answer": "Note G."}
+            ],
+            "application_answers": [{"question": "Why us?", "answer": "The machines."}],
+        },
+    )
+    assert res.get_json()["success"]
+    joined = "\n".join(captured["prompts"])
+    assert "Note G." in joined  # experience answer threaded
+    assert "The machines." in joined  # application answer threaded (avoid duplication)
+
+
 def test_download_docx_uses_profile_contact(client):
     content = (
         "## 1. TAILORED COVER LETTER\n\nDear Hiring Manager,\n\nBody paragraph.\n\n"
@@ -133,3 +217,39 @@ def test_download_docx_uses_profile_contact(client):
     )
     assert res.status_code == 200
     assert res.data[:2] == b"PK"  # .docx is a zip
+
+
+def test_load_source_local_txt(tmp_path):
+    import sources
+
+    f = tmp_path / "resume.txt"
+    f.write_text("Ada Lovelace — algorithm designer.\n")
+    out = sources.load_source(str(f))
+    assert out["kind"] == "file" and "algorithm designer" in out["text"]
+
+
+def test_load_source_strips_html(tmp_path):
+    import sources
+
+    f = tmp_path / "page.html"
+    f.write_text(
+        "<html><body><h1>Skills</h1><p>Maths &amp; logic</p><script>x()</script></body></html>"
+    )
+    text = sources.load_path(str(f))
+    assert "Skills" in text and "Maths & logic" in text
+    assert "<p>" not in text and "x()" not in text
+
+
+def test_load_source_route_and_errors(client, tmp_path):
+    f = tmp_path / "bg.md"
+    f.write_text("# Background\nBuilt the Analytical Engine notes.")
+    ok = client.post("/load-source", json={"ref": str(f)}).get_json()
+    assert ok["ok"] and ok["chars"] > 0 and "Analytical Engine" in ok["text"]
+
+    missing = client.post(
+        "/load-source", json={"ref": str(tmp_path / "nope.txt")}
+    ).get_json()
+    assert missing["ok"] is False and "not found" in missing["error"]
+
+    empty = client.post("/load-source", json={"ref": ""})
+    assert empty.status_code == 400

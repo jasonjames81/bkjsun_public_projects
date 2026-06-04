@@ -24,6 +24,7 @@ from generator import (
 from providers.config import ProviderConfig
 from providers.detect import detect_providers
 from providers.registry import list_models
+from sources import SourceError, load_source
 
 app = Flask(__name__)
 
@@ -77,6 +78,29 @@ def profile_status():
         {
             "ready": profile_mod.has_minimum_profile(profile),
             "name": profile_mod.applicant_name(profile),
+        }
+    )
+
+
+@app.route("/load-source", methods=["POST"])
+def load_source_route():
+    """Extract text from a local file path or web URL (self-host only — see sources.py)."""
+    data = request.get_json(silent=True) or {}
+    ref = (data.get("ref") or "").strip()
+    if not ref:
+        return jsonify({"ok": False, "error": "provide a file path or URL"}), 400
+    try:
+        result = load_source(ref)
+    except SourceError as e:
+        return jsonify({"ok": False, "error": str(e)})
+    except Exception as e:  # noqa: BLE001 — surface any unexpected failure to the UI
+        return jsonify({"ok": False, "error": f"could not load source: {e}"})
+    return jsonify(
+        {
+            "ok": True,
+            "kind": result["kind"],
+            "text": result["text"],
+            "chars": len(result["text"]),
         }
     )
 
@@ -311,10 +335,27 @@ def set_provider_key_route():
 
 
 if __name__ == "__main__":
+    import os
+
+    # Prod-safe defaults: debug OFF, bound to localhost. Override via env when you
+    # self-host. Set JALLM_HOST=0.0.0.0 to reach it from your phone on the same
+    # network. Never enable debug on an exposed host (Werkzeug console is an RCE).
+    debug = os.environ.get("JALLM_DEBUG", "").lower() in ("1", "true", "yes")
+    host = os.environ.get("JALLM_HOST", "127.0.0.1")
+    port = int(os.environ.get("JALLM_PORT", "5000"))
+
     print("\n" + "=" * 60)
-    print("  COVER LETTER AI HELPER")
+    print("  JOB APP LLM HELPER")
     print("=" * 60)
     _selected = ProviderConfig().load().selected() or "claude_cli"
     print(f"\nGenerating via provider: {_selected} (change it in the web UI)")
-    print("Open http://localhost:5000 in your browser\n")
-    app.run(debug=True, port=5000)
+    print(
+        f"Open http://{'localhost' if host in ('127.0.0.1', '0.0.0.0') else host}:{port} in your browser"
+    )
+    if host == "0.0.0.0":
+        print(
+            "Reachable on your LAN — open http://<this-machine-ip>:%d on your phone"
+            % port
+        )
+    print()
+    app.run(debug=debug, host=host, port=port)

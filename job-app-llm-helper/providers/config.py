@@ -13,7 +13,7 @@ from pathlib import Path
 
 from platformdirs import user_config_dir
 
-_APP_DIRNAME = "job-application-ai-helper"
+_APP_DIRNAME = "job-app-llm-helper"
 
 ENV_VARS: dict[str, str] = {
     "anthropic_api": "ANTHROPIC_API_KEY",

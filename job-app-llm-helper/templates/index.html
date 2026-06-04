@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cover Letter AI Helper</title>
+<title>Job App LLM Helper</title>
 <style>
   :root {
     --bg: #f6f7f9; --card: #ffffff; --ink: #1c2230; --muted: #5b6472;
@@ -54,6 +54,7 @@
   .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; background: #eef2f8; color: var(--accent); }
   .tag.miss { background: #fdecec; color: var(--bad); }
   .err { color: var(--bad); font-size: 0.88rem; margin-top: 8px; }
+  code { background: #eef2f8; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .chip { font-size: 0.8rem; padding: 7px 11px; border-radius: 999px; background: #eef2f8; color: var(--accent); border: none; min-height: 0; }
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -2px; }
@@ -64,7 +65,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Cover Letter AI Helper</h1>
+    <h1>Job App LLM Helper</h1>
     <p>Paste your background once, then turn any job posting into a tailored cover letter. Your data stays in this browser.</p>
   </header>
 
@@ -105,6 +106,12 @@
     </div>
     <label for="background">Background — paste your resume, experience, or LinkedIn text</label>
     <textarea id="background" style="min-height:160px" placeholder="Paste your resume / work history here. The more detail, the better the letter."></textarea>
+    <label for="sourceRef">…or import from a file or link <span class="opt">— a resume in your Documents folder, a published Google Doc, a personal site</span></label>
+    <div class="row">
+      <div style="flex:3 1 220px"><input id="sourceRef" placeholder="/home/you/Documents/resume.docx  ·  https://docs.google.com/.../pub"></div>
+      <div style="flex:1 1 90px"><button type="button" id="loadSourceBtn" class="ghost">Import</button></div>
+    </div>
+    <div class="status" id="sourceStatus"></div>
     <label for="writingSamples">Writing samples <span class="opt">(optional) — prose the AI should match in voice</span></label>
     <textarea id="writingSamples" placeholder="Paste a past cover letter or any writing in your voice. Separate multiple samples with a blank line."></textarea>
     <label for="stories">Story notes <span class="opt">(optional) — specific accomplishments with numbers/outcomes</span></label>
@@ -129,9 +136,39 @@
     <textarea id="orgAbout" placeholder="Mission / values, if not already in the description."></textarea>
     <div class="btns">
       <button type="button" id="fitBtn" class="ghost">Check fit</button>
-      <button type="button" id="generateBtn">Generate cover letter</button>
     </div>
     <div id="fitOut"></div>
+  </div>
+
+  <!-- STEP: EXPERIENCES (optional) -->
+  <div class="card">
+    <h2>Recall your experiences <span class="opt">(optional)</span></h2>
+    <p class="hint">Get questions tailored to this role, answer the ones you can, and the letter will draw on your answers.</p>
+    <div class="btns"><button type="button" id="getQuestionsBtn" class="ghost">Get tailored questions</button></div>
+    <div id="experienceQs"></div>
+    <div id="experienceErr" class="err"></div>
+  </div>
+
+  <!-- STEP: EMPLOYER APPLICATION QUESTIONS (optional) -->
+  <div class="card">
+    <h2>Employer application questions <span class="opt">(optional)</span></h2>
+    <p class="hint">Paste the employer's supplemental questions — one per line. Add an optional limit like <code>(150 words)</code> or <code>(500 chars)</code>. Drafted answers are grounded in your profile and won't be duplicated in the cover letter.</p>
+    <textarea id="appQuestionsRaw" style="min-height:110px" placeholder="Why do you want to work here? (150 words)
+Describe a time you led under pressure. (200 words)"></textarea>
+    <div class="btns">
+      <button type="button" id="clarifyBtn" class="ghost">Get drafting help</button>
+      <button type="button" id="draftAnswersBtn">Draft answers</button>
+    </div>
+    <div id="clarifyQs"></div>
+    <div id="appAnswers"></div>
+    <div id="appErr" class="err"></div>
+  </div>
+
+  <!-- GENERATE -->
+  <div class="card">
+    <h2>Generate</h2>
+    <p class="hint">Uses your profile, the job, and anything you added above.</p>
+    <div class="btns"><button type="button" id="generateBtn">Generate cover letter</button></div>
   </div>
 
   <!-- RESULT -->
@@ -235,6 +272,25 @@ PROFILE_FIELDS.forEach((f) =>
   })
 );
 
+// ---- import background from a file path or URL -----------------------------
+$("loadSourceBtn").addEventListener("click", async () => {
+  const ref = $("sourceRef").value.trim();
+  const st = $("sourceStatus");
+  if (!ref) return;
+  busy($("loadSourceBtn"), true, "Importing…");
+  let res;
+  try { res = await postJSON("/load-source", { ref }); }
+  catch { res = { ok: false, error: "request failed" }; }
+  busy($("loadSourceBtn"), false, "Import");
+  if (!res.ok) { st.innerHTML = `<span class="err">${escapeHtml(res.error || "Failed.")}</span>`; return; }
+  const bg = $("background");
+  const sep = bg.value.trim() ? "\n\n---\n\n" : "";
+  bg.value = bg.value.trim() + sep + res.text;
+  saveProfile();
+  st.innerHTML = `<span class="saved">Imported ${Number(res.chars).toLocaleString()} chars from ${escapeHtml(res.kind)} into Background ✓</span>`;
+  $("sourceRef").value = "";
+});
+
 // ---- job context -----------------------------------------------------------
 function jobContext() {
   return {
@@ -245,6 +301,12 @@ function jobContext() {
   };
 }
 function requireInputs() {
+  if (!providerReady) {
+    alert("Pick an AI provider and add an API key in “AI provider” settings first.");
+    $("settingsBox").open = true;
+    $("settingsBox").scrollIntoView({ behavior: "smooth", block: "start" });
+    return false;
+  }
   const j = jobContext();
   if (!j.job_title || !j.org_name || !j.job_description) {
     alert("Fill in job title, organization, and job description.");
@@ -258,12 +320,25 @@ function requireInputs() {
 }
 
 // ---- providers -------------------------------------------------------------
+let providerReady = false;
 async function loadProviders() {
   let data;
   try { data = await (await fetch("/providers")).json(); } catch { return; }
+  const providers = data.providers || [];
+
+  // Auto-select the first available provider if none is selected yet, so a user
+  // whose key is already set (e.g. via env var) doesn't have to pick manually.
+  if (!data.selected) {
+    const firstAvail = providers.find((p) => p.available);
+    if (firstAvail) {
+      await postJSON("/providers/select", { name: firstAvail.name });
+      data.selected = firstAvail.name;
+    }
+  }
+
   const sel = $("providerSelect");
   sel.innerHTML = "";
-  (data.providers || []).forEach((p) => {
+  providers.forEach((p) => {
     const opt = document.createElement("option");
     opt.value = p.name;
     opt.textContent = `${p.display_name} ${p.available ? "✓" : "— needs setup"}`;
@@ -271,14 +346,18 @@ async function loadProviders() {
     if (p.name === data.selected) opt.selected = true;
     sel.appendChild(opt);
   });
-  updateProviderPill(data);
+
+  const cur = providers.find((p) => p.name === data.selected);
+  providerReady = !!(cur && cur.available);
+  updateProviderPill(data, cur);
   onProviderChange();
 }
-function updateProviderPill(data) {
-  const cur = (data.providers || []).find((p) => p.name === data.selected);
+function updateProviderPill(data, cur) {
   const pill = $("providerPill");
-  if (!data.selected) { pill.textContent = "none selected"; return; }
-  pill.textContent = cur ? `${cur.display_name}${cur.available ? "" : " (setup needed)"}` : data.selected;
+  if (!data.selected) { pill.textContent = "set one up"; return; }
+  pill.textContent = cur
+    ? `${cur.display_name}${cur.available ? " ✓" : " — setup needed"}`
+    : data.selected;
 }
 function onProviderChange() {
   const opt = $("providerSelect").selectedOptions[0];
@@ -345,12 +424,144 @@ function renderFit(r) {
     </div>`;
 }
 
+// ---- step: experience questions (optional) ---------------------------------
+$("getQuestionsBtn").addEventListener("click", async () => {
+  if (!requireInputs()) return;
+  $("experienceErr").textContent = "";
+  busy($("getQuestionsBtn"), true, "Loading…");
+  const res = await postJSON("/get-questions", { ...jobContext(), profile: currentProfile() });
+  busy($("getQuestionsBtn"), false, "Get tailored questions");
+  if (!res.success) { $("experienceErr").textContent = res.error || "Failed."; return; }
+  renderExperienceQs(res.questions || []);
+});
+function renderExperienceQs(qs) {
+  const c = $("experienceQs");
+  c.innerHTML = "";
+  if (!qs.length) { c.innerHTML = '<p class="hint">No questions returned — try again.</p>'; return; }
+  qs.forEach((q) => {
+    const lab = document.createElement("label");
+    lab.textContent = q;
+    const ta = document.createElement("textarea");
+    ta.className = "exp-a";
+    ta.dataset.q = q;
+    c.appendChild(lab);
+    c.appendChild(ta);
+  });
+}
+function collectExperienceAnswers() {
+  return [...document.querySelectorAll(".exp-a")]
+    .map((ta) => ({ question: ta.dataset.q, answer: ta.value.trim() }))
+    .filter((x) => x.answer);
+}
+
+// ---- step: employer application questions (optional) -----------------------
+let appQuestionsInput = []; // [{question, limit:{value,unit}|null}]
+let appAnswers = [];        // [{question, answer}]
+
+function parseAppQuestions() {
+  return $("appQuestionsRaw").value.split("\n").map((s) => s.trim()).filter(Boolean)
+    .map((line) => {
+      const m = line.match(/\((\d+)\s*(words?|chars?|characters?)\)\s*$/i);
+      if (m) {
+        const unit = /char/i.test(m[2]) ? "chars" : "words";
+        return { question: line.slice(0, m.index).trim(), limit: { value: parseInt(m[1], 10), unit } };
+      }
+      return { question: line, limit: null };
+    });
+}
+$("clarifyBtn").addEventListener("click", async () => {
+  if (!requireInputs()) return;
+  appQuestionsInput = parseAppQuestions();
+  if (!appQuestionsInput.length) { $("appErr").textContent = "Paste at least one question."; return; }
+  $("appErr").textContent = "";
+  busy($("clarifyBtn"), true, "Checking…");
+  const res = await postJSON("/clarify-application-questions", {
+    ...jobContext(), profile: currentProfile(),
+    questions: appQuestionsInput.map((q) => q.question),
+  });
+  busy($("clarifyBtn"), false, "Get drafting help");
+  if (!res.success) { $("appErr").textContent = res.error || "Failed."; return; }
+  renderClarify(res.clarifying_questions || []);
+});
+function renderClarify(qs) {
+  const c = $("clarifyQs");
+  c.innerHTML = "";
+  if (!qs.length) {
+    c.innerHTML = '<p class="hint">No clarifying questions — your profile already covers these. Click “Draft answers”.</p>';
+    return;
+  }
+  const h = document.createElement("p");
+  h.innerHTML = "<strong>Optional — answer any that help, then “Draft answers”:</strong>";
+  c.appendChild(h);
+  qs.forEach((q) => {
+    const lab = document.createElement("label");
+    lab.textContent = q;
+    const ta = document.createElement("textarea");
+    ta.className = "clar-a";
+    ta.dataset.q = q;
+    c.appendChild(lab);
+    c.appendChild(ta);
+  });
+}
+function collectClarifying() {
+  return [...document.querySelectorAll(".clar-a")]
+    .map((ta) => ({ question: ta.dataset.q, answer: ta.value.trim() }))
+    .filter((x) => x.answer);
+}
+$("draftAnswersBtn").addEventListener("click", async () => {
+  if (!requireInputs()) return;
+  appQuestionsInput = parseAppQuestions();
+  if (!appQuestionsInput.length) { $("appErr").textContent = "Paste at least one question."; return; }
+  $("appErr").textContent = "";
+  busy($("draftAnswersBtn"), true, "Drafting…");
+  const res = await postJSON("/answer-application-questions", {
+    ...jobContext(), profile: currentProfile(),
+    questions: appQuestionsInput, clarifying_answers: collectClarifying(),
+  });
+  busy($("draftAnswersBtn"), false, "Draft answers");
+  if (!res.success) { $("appErr").textContent = res.error || "Failed."; return; }
+  renderAppAnswers(res.answers || []);
+});
+function renderAppAnswers(answers) {
+  appAnswers = answers.map((a) => ({ question: a.question, answer: a.answer }));
+  const c = $("appAnswers");
+  c.innerHTML = "";
+  appAnswers.forEach((a, i) => {
+    const lab = document.createElement("label");
+    lab.textContent = a.question;
+    const ta = document.createElement("textarea");
+    ta.value = a.answer;
+    ta.style.minHeight = "120px";
+    ta.addEventListener("input", () => { appAnswers[i].answer = ta.value; });
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.className = "chip";
+    copy.textContent = "Copy";
+    copy.addEventListener("click", () => navigator.clipboard && navigator.clipboard.writeText(ta.value));
+    const bar = document.createElement("div");
+    bar.className = "btns";
+    bar.appendChild(copy);
+    c.appendChild(lab);
+    c.appendChild(ta);
+    c.appendChild(bar);
+  });
+}
+function collectAppAnswers() {
+  return appAnswers
+    .map((a) => ({ question: a.question, answer: (a.answer || "").trim() }))
+    .filter((a) => a.answer);
+}
+
 // ---- generate / refine / download ------------------------------------------
 let lastContent = "";
 $("generateBtn").addEventListener("click", async () => {
   if (!requireInputs()) return;
   busy($("generateBtn"), true, "Generating…");
-  const res = await postJSON("/generate", { ...jobContext(), profile: currentProfile() });
+  const res = await postJSON("/generate", {
+    ...jobContext(), profile: currentProfile(),
+    experience_answers: collectExperienceAnswers(),
+    application_answers: collectAppAnswers(),
+  });
   busy($("generateBtn"), false, "Generate cover letter");
   if (!res.success) {
     $("resultCard").style.display = "";

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start the Cover Letter AI Helper. Creates a venv on first run.
+# Start the Job App LLM Helper. Creates a venv on first run.
 set -euo pipefail
 cd "$(dirname "$0")"
 
