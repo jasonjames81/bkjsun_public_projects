@@ -9,14 +9,32 @@ provider in the UI.
 `localStorage` and sent with each request. The server keeps no per-user files — only your
 chosen provider + API key (stored locally, file permissions `0600`).
 
-## Quick start
+## Download & run on a Mac (no terminal commands)
+
+1. Go to the [**Releases**](https://github.com/jasonjames81/public_projects/releases) page and
+   download `job-app-llm-helper.zip`.
+2. Double-click the zip to unzip it, then open the `job-app-llm-helper` folder.
+3. **Right-click** `start-mac.command` → **Open** → **Open**. (macOS asks the first time
+   because the file was downloaded — you only approve it once. After that, double-click works.)
+4. A Terminal window opens, sets things up the first time (~1 minute), and your browser opens
+   to the app. Keep that Terminal window open while you use it; close it to stop.
+5. In the app, open **AI provider**, pick one, and paste an API key.
+
+**You need two things:** Python 3 (the launcher tells you where to get it if it's missing) and
+an LLM API key. The simplest key is from Anthropic — create one at
+<https://console.anthropic.com> → *API keys*, then paste it into the app's *AI provider* box.
+(OpenAI and Google keys also work, as does a logged-in `claude` CLI or a local Ollama model.)
+
+> Everything runs on your own computer. Your profile stays in your browser; your key is stored
+> locally. Nothing is uploaded except your request to the LLM provider you choose.
+
+## Quick start (developers)
 
 ```bash
-./start.sh
+./start.sh            # macOS/Linux: creates a venv, installs deps, runs the app
 ```
 
-Then open <http://localhost:5000>. The script creates a `venv`, installs dependencies, and
-launches the app.
+Then open <http://localhost:5000>.
 
 Manual setup:
 
