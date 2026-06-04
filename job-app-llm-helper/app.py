@@ -1,10 +1,13 @@
 # app.py
-"""Flask app for the public cover-letter generator.
+"""Flask app for Job App LLM Helper (public, self-hosted edition).
 
 Stateless by design: the applicant profile (name, background, contact, optional
 writing samples and story notes) is supplied by the browser with each request and
 remembered client-side in localStorage. The server reads and writes no per-user
 files — only the provider config (API-key selection) lives on disk, via platformdirs.
+
+Self-host only: the import (sources.py) and CLI-login (cli_auth.py) routes read local
+files / launch local processes, so this must not run as a shared multi-tenant server.
 """
 
 from datetime import date

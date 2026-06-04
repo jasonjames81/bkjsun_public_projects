@@ -120,13 +120,16 @@ URLs generally require login and won't extract — paste that text or use a publ
 > fine for the intended single-user, self-hosted setup. Do not expose this app as a shared
 > public server (see *Deploying*).
 
-## Providers
+## Providers (quick reference)
+
+See [*Connecting an LLM*](#connecting-an-llm--api-key-or-a-subscription-you-already-have)
+above for how to set each one up.
 
 | Kind | Examples | Notes |
 |---|---|---|
 | API key | Anthropic, OpenAI, Google | Works on any machine. Bring your own key. |
-| CLI | Claude, Gemini, Codex | Used if the CLI is installed and logged in. |
-| Local | Ollama | Runs fully offline against a local model. |
+| CLI | Claude, Gemini, Codex | Uses a subscription via the official CLI. Sign in with the in-app **Connect — open login** button. |
+| Local | Ollama | Runs fully offline against a local model. No account. |
 
 ## Configuration
 
@@ -171,10 +174,12 @@ app.py            Flask routes; stateless, profile carried per-request
 generator.py      LLM prompts (parameterized by applicant profile) + provider routing
 profile.py        Builds prompt blocks from the user's profile; voice fingerprint
 sources.py        Import background from a local file path or web URL (self-host only)
+cli_auth.py       Connect a subscription CLI: logged-in probe + browser-login launch
 docx_writer.py    Renders the .docx (contact header from the profile)
 providers/        Provider abstraction: API / CLI / Ollama adapters, key storage, detection
 templates/        Single-page, mobile-first UI (localStorage-backed profile)
 config.py         Default CLI model + timeout
+start-mac.command / start-windows.bat   Double-click launchers (venv + run + open browser)
 tests/            Offline smoke tests (mock provider; no network)
 ```
 
