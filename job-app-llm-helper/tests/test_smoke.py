@@ -253,3 +253,58 @@ def test_load_source_route_and_errors(client, tmp_path):
 
     empty = client.post("/load-source", json={"ref": ""})
     assert empty.status_code == 400
+
+
+def test_cli_status_not_installed(monkeypatch):
+    import cli_auth
+
+    monkeypatch.setattr(cli_auth.shutil, "which", lambda b: None)
+    s = cli_auth.status("claude_cli")
+    assert s["installed"] is False and s["logged_in"] is False
+    assert s["login_command"] == "claude" and s["install"]["npm"]
+
+
+def test_cli_is_logged_in_probe(monkeypatch):
+    import subprocess
+
+    import cli_auth
+
+    monkeypatch.setattr(cli_auth.shutil, "which", lambda b: "/usr/bin/" + b)
+
+    class R:
+        def __init__(self, rc, out):
+            self.returncode, self.stdout = rc, out
+
+    monkeypatch.setattr(cli_auth.subprocess, "run", lambda *a, **k: R(0, "ok"))
+    assert cli_auth.is_logged_in("claude_cli") is True
+
+    monkeypatch.setattr(cli_auth.subprocess, "run", lambda *a, **k: R(1, ""))
+    assert cli_auth.is_logged_in("claude_cli") is False
+
+    def boom(*a, **k):
+        raise subprocess.TimeoutExpired("claude", 30)
+
+    monkeypatch.setattr(cli_auth.subprocess, "run", boom)
+    assert cli_auth.is_logged_in("claude_cli") is False
+
+
+def test_cli_status_route(client, monkeypatch):
+    import cli_auth
+
+    bogus = client.get("/providers/cli-status?name=not_a_cli")
+    assert bogus.status_code == 400
+
+    monkeypatch.setattr(cli_auth.shutil, "which", lambda b: None)
+    s = client.get("/providers/cli-status?name=gemini_cli").get_json()
+    assert s["installed"] is False and s["logged_in"] is False
+
+
+def test_cli_login_route_not_installed(client, monkeypatch):
+    import cli_auth
+
+    monkeypatch.setattr(cli_auth.shutil, "which", lambda b: None)
+    res = client.post("/providers/cli-login", json={"name": "claude_cli"}).get_json()
+    assert res["launched"] is False and "not installed" in res["error"]
+
+    bad = client.post("/providers/cli-login", json={"name": "nope"})
+    assert bad.status_code == 400

@@ -21,6 +21,7 @@ from generator import (
     generate_questions,
     refine_letter,
 )
+import cli_auth
 from providers.config import ProviderConfig
 from providers.detect import detect_providers
 from providers.registry import list_models
@@ -302,6 +303,27 @@ def provider_models_route():
     cfg = _provider_config_for_request()
     name = (request.args.get("name") or "").strip()
     return jsonify({"models": list_models(name, cfg)})
+
+
+@app.route("/providers/cli-status")
+def cli_status_route():
+    """Installed + logged-in state for a subscription CLI provider (self-host only)."""
+    name = (request.args.get("name") or "").strip()
+    if name not in cli_auth.BINARY:
+        return jsonify({"error": f"not a CLI provider: {name!r}"}), 400
+    return jsonify(cli_auth.status(name))
+
+
+@app.route("/providers/cli-login", methods=["POST"])
+def cli_login_route():
+    """Open the CLI's browser login in a terminal (self-host only). Falls back to a manual command."""
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if name not in cli_auth.BINARY:
+        return jsonify(
+            {"launched": False, "error": f"not a CLI provider: {name!r}"}
+        ), 400
+    return jsonify(cli_auth.launch_login(name))
 
 
 @app.route("/providers/select", methods=["POST"])

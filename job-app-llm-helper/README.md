@@ -47,6 +47,12 @@ The app auto-detects which of these are available and shows them in *AI provider
 > violates those services' terms and risks your account. The official CLIs above are the
 > supported, ToS-compliant way to use a subscription — they log in with the same account.
 
+**Connecting a CLI from inside the app:** select a `(CLI login)` provider in *AI provider*.
+If it's installed but not signed in, click **Connect — open login**: the app opens the CLI's
+browser sign-in in a terminal and detects when you're done (it flips to *Connected ✓*). If
+it isn't installed, the panel shows the one-line install command. The Mac/Windows launchers
+also offer to install Claude Code for you on first run.
+
 > Everything runs on your own computer. Your profile stays in your browser; your key (if any)
 > is stored locally. Nothing is uploaded except your request to the provider you choose.
 

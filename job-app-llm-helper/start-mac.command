@@ -39,6 +39,21 @@ source venv/bin/activate
 python3 -m pip install -q --upgrade pip >/dev/null 2>&1
 python3 -m pip install -q -r requirements.txt || { echo "Could not install dependencies."; read -r -p "Press Return to close."; exit 1; }
 
+# --- Optional: install Claude Code (use a Claude subscription, no API key) ---
+if ! command -v claude >/dev/null 2>&1; then
+  if command -v npm >/dev/null 2>&1; then
+    echo
+    echo "Optional: install Claude Code, so you can sign in with a Claude Pro/Max"
+    echo "subscription instead of an API key. (You can also skip this and paste an"
+    echo "API key in the app, or set it up later from the app's AI provider panel.)"
+    printf "Install Claude Code now with npm? [y/N] "
+    read -r ans
+    case "$ans" in
+      [yY]*) npm install -g @anthropic-ai/claude-code || echo "Install failed — you can still use an API key in the app." ;;
+    esac
+  fi
+fi
+
 # --- Launch -----------------------------------------------------------------
 # Open the browser a moment after the server starts.
 ( sleep 2; open "http://localhost:5000" ) &

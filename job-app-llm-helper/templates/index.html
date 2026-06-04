@@ -92,6 +92,14 @@
           <div style="flex:1 1 90px"><button type="button" id="saveKeyBtn" class="ghost">Save key</button></div>
         </div>
       </div>
+      <div id="cliWrap" style="display:none">
+        <div class="status" id="cliState">Checking…</div>
+        <div class="btns">
+          <button type="button" id="cliConnectBtn" class="ghost">Connect — open login</button>
+          <button type="button" id="cliRecheckBtn" class="ghost">Re-check</button>
+        </div>
+        <div class="hint" id="cliManual"></div>
+      </div>
       <div class="status" id="providerStatus"></div>
     </details>
   </div>
@@ -368,7 +376,92 @@ function onProviderChange() {
   const opt = $("providerSelect").selectedOptions[0];
   const kind = opt ? opt.dataset.kind : "";
   $("keyWrap").style.display = kind === "api" ? "" : "none";
+  $("cliWrap").style.display = kind === "cli" ? "" : "none";
   loadModels($("providerSelect").value);
+  if (kind === "cli") refreshCliStatus($("providerSelect").value);
+}
+
+// ---- subscription CLI: connect via browser login ---------------------------
+let cliPollTimer = null;
+async function refreshCliStatus(name) {
+  stopCliPoll();
+  const state = $("cliState"), manual = $("cliManual"), connect = $("cliConnectBtn");
+  state.textContent = "Checking…";
+  manual.innerHTML = "";
+  let s;
+  try { s = await (await fetch("/providers/cli-status?name=" + encodeURIComponent(name))).json(); }
+  catch { state.innerHTML = '<span class="err">status check failed</span>'; return; }
+  if (!s.installed) {
+    const inst = s.install || {};
+    state.innerHTML = `<span class="err">${escapeHtml(inst.display || name)} is not installed.</span>`;
+    connect.style.display = "none";
+    manual.innerHTML =
+      `Install it (needs Node.js): <code>npm install -g ${escapeHtml(inst.npm || "")}</code>` +
+      (inst.url ? ` · <a href="${escapeHtml(inst.url)}" target="_blank" rel="noopener">install guide</a>` : "") +
+      `. Then click <em>Re-check</em>.`;
+    return;
+  }
+  if (s.logged_in) {
+    state.innerHTML = '<span class="saved">Connected ✓ — logged in and ready.</span>';
+    connect.style.display = "none";
+    providerReady = true;
+    updatePillReady(name);
+    return;
+  }
+  // installed, not logged in
+  state.innerHTML = `<span class="err">Installed, but not logged in yet.</span>`;
+  connect.style.display = "";
+  manual.innerHTML =
+    `Click <em>Connect</em> to open the sign-in, or run <code>${escapeHtml(s.login_command)}</code> ` +
+    `in a terminal yourself, then <em>Re-check</em>.`;
+}
+function updatePillReady(name) {
+  const opt = [...$("providerSelect").options].find((o) => o.value === name);
+  $("providerPill").textContent = (opt ? opt.textContent.replace(/—.*$/, "").trim() : name) + " ✓";
+}
+function stopCliPoll() {
+  if (cliPollTimer) { clearTimeout(cliPollTimer); cliPollTimer = null; }
+}
+$("cliRecheckBtn").addEventListener("click", () => refreshCliStatus($("providerSelect").value));
+$("cliConnectBtn").addEventListener("click", async () => {
+  const name = $("providerSelect").value;
+  busy($("cliConnectBtn"), true, "Opening login…");
+  let res;
+  try { res = await postJSON("/providers/cli-login", { name }); }
+  catch { res = { launched: false }; }
+  busy($("cliConnectBtn"), false, "Connect — open login");
+  const manual = $("cliManual");
+  if (res.launched) {
+    $("cliState").innerHTML = '<span class="status">A terminal opened — finish the sign-in there, then come back.</span>';
+    manual.innerHTML = "Waiting for sign-in to complete…";
+  } else {
+    manual.innerHTML =
+      `Couldn't open a terminal automatically. Open one yourself and run ` +
+      `<code>${escapeHtml(res.login_command || "")}</code>, then click <em>Re-check</em>.`;
+  }
+  // Poll for completion (the user may log in manually). Sequential — each status
+  // probe runs a subprocess, so wait for one to finish before scheduling the next.
+  pollCliUntilLoggedIn(name, 30);
+});
+function pollCliUntilLoggedIn(name, triesLeft) {
+  stopCliPoll();
+  cliPollTimer = setTimeout(async () => {
+    let s;
+    try { s = await (await fetch("/providers/cli-status?name=" + encodeURIComponent(name))).json(); }
+    catch { s = {}; }
+    if (s.logged_in) {
+      stopCliPoll();
+      $("cliState").innerHTML = '<span class="saved">Connected ✓ — logged in and ready.</span>';
+      $("cliManual").innerHTML = "";
+      $("cliConnectBtn").style.display = "none";
+      providerReady = true;
+      updatePillReady(name);
+    } else if (triesLeft > 1) {
+      pollCliUntilLoggedIn(name, triesLeft - 1);
+    } else {
+      $("cliManual").innerHTML += " (Stopped waiting — click <em>Re-check</em> once you've signed in.)";
+    }
+  }, 4000);
 }
 async function loadModels(name) {
   const wrap = $("modelWrap"), sel = $("modelSelect");

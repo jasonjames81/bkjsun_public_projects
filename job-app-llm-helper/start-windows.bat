@@ -41,6 +41,22 @@ if errorlevel 1 (
   exit /b 1
 )
 
+REM --- Optional: install Claude Code (use a Claude subscription, no API key) ---
+where claude >nul 2>nul
+if errorlevel 1 (
+  where npm >nul 2>nul
+  if not errorlevel 1 (
+    echo.
+    echo Optional: install Claude Code, so you can sign in with a Claude Pro/Max
+    echo subscription instead of an API key. You can also skip this and paste an
+    echo API key in the app, or set it up later from the app's AI provider panel.
+    set /p ans="Install Claude Code now with npm? [y/N] "
+    if /i "%ans%"=="y" (
+      call npm install -g @anthropic-ai/claude-code || echo Install failed - you can still use an API key in the app.
+    )
+  )
+)
+
 REM Open the browser a moment after the server starts.
 start "" /b cmd /c "timeout /t 2 >nul & start """" http://localhost:5000"
 
