@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cover Letter AI Helper</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2230; --muted: #5b6472;
+    --line: #e3e7ee; --accent: #2b6cb0; --accent-ink: #fff;
+    --ok: #2f855a; --warn: #b7791f; --bad: #c53030; --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 16px; }
+  header h1 { font-size: 1.4rem; margin: 8px 0 2px; }
+  header p { color: var(--muted); margin: 0 0 14px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+  }
+  .card > h2 { font-size: 1.05rem; margin: 0 0 4px; }
+  .card > .hint { color: var(--muted); font-size: 0.85rem; margin: 0 0 12px; }
+  label { display: block; font-weight: 600; font-size: 0.85rem; margin: 10px 0 4px; }
+  label .opt { font-weight: 400; color: var(--muted); }
+  input, textarea, select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 8px; font: inherit; background: #fff; color: var(--ink);
+  }
+  textarea { resize: vertical; min-height: 90px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > div { flex: 1 1 200px; }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer; border: none;
+    border-radius: 8px; padding: 11px 16px; background: var(--accent);
+    color: var(--accent-ink); min-height: 44px;
+  }
+  button.ghost { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+  button:disabled { opacity: 0.55; cursor: default; }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  details.settings summary { cursor: pointer; font-weight: 600; }
+  .pill { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .status { font-size: 0.85rem; margin-top: 8px; }
+  .saved { color: var(--ok); }
+  .out { white-space: pre-wrap; word-wrap: break-word; background: #fbfcfe; border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-top: 12px; }
+  .fit { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .light { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+  .light.proceed { background: var(--ok); } .light.caution { background: var(--warn); } .light.skip { background: var(--bad); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; background: #eef2f8; color: var(--accent); }
+  .tag.miss { background: #fdecec; color: var(--bad); }
+  .err { color: var(--bad); font-size: 0.88rem; margin-top: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chip { font-size: 0.8rem; padding: 7px 11px; border-radius: 999px; background: #eef2f8; color: var(--accent); border: none; min-height: 0; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 600px) { .wrap { padding: 12px; } .btns button { flex: 1 1 100%; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Cover Letter AI Helper</h1>
+    <p>Paste your background once, then turn any job posting into a tailored cover letter. Your data stays in this browser.</p>
+  </header>
+
+  <!-- SETTINGS / PROVIDER -->
+  <div class="card">
+    <details class="settings" id="settingsBox">
+      <summary>AI provider <span class="pill" id="providerPill">checking…</span></summary>
+      <p class="hint" style="margin-top:10px">Pick where generation runs. A bring-your-own API key (Anthropic, OpenAI, Google) works on any machine; a logged-in CLI or local Ollama model also work if available.</p>
+      <label for="providerSelect">Provider</label>
+      <select id="providerSelect"></select>
+      <div id="modelWrap" style="display:none">
+        <label for="modelSelect">Model</label>
+        <select id="modelSelect"></select>
+      </div>
+      <div id="keyWrap" style="display:none">
+        <label for="providerKeyInput">API key <span class="opt">— stored locally, file permissions 0600</span></label>
+        <div class="row">
+          <div style="flex:3 1 200px"><input type="password" id="providerKeyInput" autocomplete="off" placeholder="Paste API key"></div>
+          <div style="flex:1 1 90px"><button type="button" id="saveKeyBtn" class="ghost">Save key</button></div>
+        </div>
+      </div>
+      <div class="status" id="providerStatus"></div>
+    </details>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="card">
+    <h2>Your profile</h2>
+    <p class="hint">Saved in this browser only (localStorage). Reused for every letter until you change it.</p>
+    <div class="row">
+      <div><label for="applicantName">Full name</label><input id="applicantName" placeholder="Ada Lovelace"></div>
+      <div><label for="cityState">City, State <span class="opt">(optional)</span></label><input id="cityState" placeholder="London, UK"></div>
+    </div>
+    <div class="row">
+      <div><label for="phone">Phone <span class="opt">(optional)</span></label><input id="phone"></div>
+      <div><label for="email">Email <span class="opt">(optional)</span></label><input id="email"></div>
+      <div><label for="linkedin">LinkedIn <span class="opt">(optional)</span></label><input id="linkedin"></div>
+    </div>
+    <label for="background">Background — paste your resume, experience, or LinkedIn text</label>
+    <textarea id="background" style="min-height:160px" placeholder="Paste your resume / work history here. The more detail, the better the letter."></textarea>
+    <label for="writingSamples">Writing samples <span class="opt">(optional) — prose the AI should match in voice</span></label>
+    <textarea id="writingSamples" placeholder="Paste a past cover letter or any writing in your voice. Separate multiple samples with a blank line."></textarea>
+    <label for="stories">Story notes <span class="opt">(optional) — specific accomplishments with numbers/outcomes</span></label>
+    <textarea id="stories" placeholder="e.g. Led a 30-person team that delivered X under Y constraint, finishing on time and 10% under budget."></textarea>
+    <div class="btns">
+      <button type="button" id="saveProfileBtn">Save profile</button>
+      <button type="button" id="clearProfileBtn" class="ghost">Clear</button>
+      <span class="status saved" id="profileSaved"></span>
+    </div>
+  </div>
+
+  <!-- JOB -->
+  <div class="card">
+    <h2>The job</h2>
+    <div class="row">
+      <div><label for="jobTitle">Job title</label><input id="jobTitle" placeholder="Program Manager"></div>
+      <div><label for="orgName">Organization</label><input id="orgName" placeholder="Example Foundation"></div>
+    </div>
+    <label for="jobDescription">Job description</label>
+    <textarea id="jobDescription" style="min-height:140px" placeholder="Paste the full job posting."></textarea>
+    <label for="orgAbout">About the organization <span class="opt">(optional)</span></label>
+    <textarea id="orgAbout" placeholder="Mission / values, if not already in the description."></textarea>
+    <div class="btns">
+      <button type="button" id="fitBtn" class="ghost">Check fit</button>
+      <button type="button" id="generateBtn">Generate cover letter</button>
+    </div>
+    <div id="fitOut"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="card" id="resultCard" style="display:none">
+    <h2>Result</h2>
+    <div id="resultOut" class="out"></div>
+    <label for="refineInput" style="margin-top:14px">Refine</label>
+    <div class="chips" id="refineChips">
+      <button type="button" class="chip" data-refine="Make it tighter and shorter.">Tighter</button>
+      <button type="button" class="chip" data-refine="Make the tone warmer.">Warmer</button>
+      <button type="button" class="chip" data-refine="Make it more confident.">More confident</button>
+      <button type="button" class="chip" data-refine="Try a different opening paragraph.">Different opening</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div style="flex:3 1 200px"><input id="refineInput" placeholder="Or type your own instruction"></div>
+      <div style="flex:1 1 90px"><button type="button" id="refineBtn" class="ghost">Refine</button></div>
+    </div>
+    <div class="btns">
+      <button type="button" id="downloadBtn">Download .docx</button>
+    </div>
+    <div id="resultErr" class="err"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ---- tiny helpers ----------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+async function postJSON(url, body) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  return res.json();
+}
+function busy(btn, on, label) {
+  if (!btn) return;
+  if (on) {
+    btn.dataset.label = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> ' + (label || "Working…");
+  } else {
+    btn.disabled = false;
+    btn.textContent = btn.dataset.label || label || btn.textContent;
+  }
+}
+
+// ---- profile (localStorage) ------------------------------------------------
+const PROFILE_KEY = "cla_profile_v1";
+const PROFILE_FIELDS = ["applicantName", "cityState", "phone", "email", "linkedin",
+  "background", "writingSamples", "stories"];
+
+function readProfileForm() {
+  return {
+    applicant_name: $("applicantName").value.trim(),
+    contact: {
+      name: $("applicantName").value.trim(),
+      city_state: $("cityState").value.trim(),
+      phone: $("phone").value.trim(),
+      email: $("email").value.trim(),
+      linkedin: $("linkedin").value.trim(),
+    },
+    background: $("background").value.trim(),
+    writing_samples: $("writingSamples").value.trim(),
+    stories: $("stories").value.trim(),
+  };
+}
+function saveProfile() {
+  const raw = {};
+  PROFILE_FIELDS.forEach((f) => (raw[f] = $(f).value));
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(raw));
+  const el = $("profileSaved");
+  el.textContent = "Saved ✓";
+  setTimeout(() => (el.textContent = ""), 2000);
+}
+function loadProfile() {
+  let raw;
+  try { raw = JSON.parse(localStorage.getItem(PROFILE_KEY) || "{}"); } catch { raw = {}; }
+  PROFILE_FIELDS.forEach((f) => { if (raw[f] != null) $(f).value = raw[f]; });
+}
+function currentProfile() { return readProfileForm(); }
+
+$("saveProfileBtn").addEventListener("click", saveProfile);
+$("clearProfileBtn").addEventListener("click", () => {
+  if (!confirm("Clear your saved profile from this browser?")) return;
+  localStorage.removeItem(PROFILE_KEY);
+  PROFILE_FIELDS.forEach((f) => ($(f).value = ""));
+});
+// auto-save on edit (debounced)
+let saveTimer = null;
+PROFILE_FIELDS.forEach((f) =>
+  $(f).addEventListener("input", () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveProfile, 800);
+  })
+);
+
+// ---- job context -----------------------------------------------------------
+function jobContext() {
+  return {
+    job_title: $("jobTitle").value.trim(),
+    org_name: $("orgName").value.trim(),
+    job_description: $("jobDescription").value.trim(),
+    org_about: $("orgAbout").value.trim(),
+  };
+}
+function requireInputs() {
+  const j = jobContext();
+  if (!j.job_title || !j.org_name || !j.job_description) {
+    alert("Fill in job title, organization, and job description.");
+    return false;
+  }
+  if (currentProfile().background.length < 40) {
+    alert("Add your background (resume / experience text) in Your profile first.");
+    return false;
+  }
+  return true;
+}
+
+// ---- providers -------------------------------------------------------------
+async function loadProviders() {
+  let data;
+  try { data = await (await fetch("/providers")).json(); } catch { return; }
+  const sel = $("providerSelect");
+  sel.innerHTML = "";
+  (data.providers || []).forEach((p) => {
+    const opt = document.createElement("option");
+    opt.value = p.name;
+    opt.textContent = `${p.display_name} ${p.available ? "✓" : "— needs setup"}`;
+    opt.dataset.kind = p.kind;
+    if (p.name === data.selected) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  updateProviderPill(data);
+  onProviderChange();
+}
+function updateProviderPill(data) {
+  const cur = (data.providers || []).find((p) => p.name === data.selected);
+  const pill = $("providerPill");
+  if (!data.selected) { pill.textContent = "none selected"; return; }
+  pill.textContent = cur ? `${cur.display_name}${cur.available ? "" : " (setup needed)"}` : data.selected;
+}
+function onProviderChange() {
+  const opt = $("providerSelect").selectedOptions[0];
+  const kind = opt ? opt.dataset.kind : "";
+  $("keyWrap").style.display = kind === "api" ? "" : "none";
+  loadModels($("providerSelect").value);
+}
+async function loadModels(name) {
+  const wrap = $("modelWrap"), sel = $("modelSelect");
+  try {
+    const data = await (await fetch("/providers/models?name=" + encodeURIComponent(name))).json();
+    const models = data.models || [];
+    if (!models.length) { wrap.style.display = "none"; return; }
+    sel.innerHTML = "";
+    models.forEach((m) => {
+      const o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o);
+    });
+    wrap.style.display = "";
+  } catch { wrap.style.display = "none"; }
+}
+$("providerSelect").addEventListener("change", async () => {
+  await postJSON("/providers/select", {
+    name: $("providerSelect").value,
+    model: $("modelSelect") && $("modelWrap").style.display !== "none" ? $("modelSelect").value : "",
+  });
+  onProviderChange();
+  loadProviders();
+});
+$("modelSelect").addEventListener("change", () =>
+  postJSON("/providers/select", { name: $("providerSelect").value, model: $("modelSelect").value })
+);
+$("saveKeyBtn").addEventListener("click", async () => {
+  const key = $("providerKeyInput").value.trim();
+  if (!key) return;
+  busy($("saveKeyBtn"), true, "Saving…");
+  const res = await postJSON("/providers/key", { name: $("providerSelect").value, key });
+  busy($("saveKeyBtn"), false, "Save key");
+  $("providerStatus").textContent = res.success ? (res.consent || "Key saved.") : (res.error || "Failed.");
+  $("providerKeyInput").value = "";
+  loadProviders();
+});
+
+// ---- fit -------------------------------------------------------------------
+$("fitBtn").addEventListener("click", async () => {
+  if (!requireInputs()) return;
+  busy($("fitBtn"), true, "Checking…");
+  $("fitOut").innerHTML = "";
+  const res = await postJSON("/analyze-fit", { ...jobContext(), profile: currentProfile() });
+  busy($("fitBtn"), false, "Check fit");
+  if (!res.success) { $("fitOut").innerHTML = `<div class="err">${escapeHtml(res.error || "Failed.")}</div>`; return; }
+  renderFit(res);
+});
+function renderFit(r) {
+  const tag = (t, miss) => `<span class="tag${miss ? " miss" : ""}">${escapeHtml(t)}</span>`;
+  $("fitOut").innerHTML = `
+    <div class="out">
+      <div class="fit"><span class="light ${escapeHtml(r.recommendation)}"></span>
+        <strong>${escapeHtml((r.recommendation || "").toUpperCase())}</strong>
+        <span class="pill">match ${escapeHtml(r.match_score)}/100</span></div>
+      <p style="margin:10px 0 4px">${escapeHtml(r.rationale || "")}</p>
+      ${(r.strengths || []).length ? "<strong>Strengths</strong><ul>" + r.strengths.map((s) => `<li>${escapeHtml(s)}</li>`).join("") + "</ul>" : ""}
+      ${(r.concerns || []).length ? "<strong>Concerns</strong><ul>" + r.concerns.map((s) => `<li>${escapeHtml(s)}</li>`).join("") + "</ul>" : ""}
+      <div class="tags">${(r.keywords_matched || []).map((k) => tag(k, false)).join("")}${(r.keywords_missing || []).map((k) => tag(k, true)).join("")}</div>
+    </div>`;
+}
+
+// ---- generate / refine / download ------------------------------------------
+let lastContent = "";
+$("generateBtn").addEventListener("click", async () => {
+  if (!requireInputs()) return;
+  busy($("generateBtn"), true, "Generating…");
+  const res = await postJSON("/generate", { ...jobContext(), profile: currentProfile() });
+  busy($("generateBtn"), false, "Generate cover letter");
+  if (!res.success) {
+    $("resultCard").style.display = "";
+    $("resultOut").textContent = "";
+    $("resultErr").textContent = res.error || "Generation failed.";
+    return;
+  }
+  showResult(res.content);
+});
+function showResult(content) {
+  lastContent = content || "";
+  $("resultCard").style.display = "";
+  $("resultErr").textContent = "";
+  $("resultOut").textContent = lastContent;
+  $("resultCard").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function doRefine(instruction) {
+  if (!lastContent || !instruction) return;
+  busy($("refineBtn"), true, "Refining…");
+  const res = await postJSON("/refine", {
+    current_letter: lastContent, instruction,
+    job_title: $("jobTitle").value.trim(), org_name: $("orgName").value.trim(),
+    profile: currentProfile(),
+  });
+  busy($("refineBtn"), false, "Refine");
+  if (!res.success) { $("resultErr").textContent = res.error || "Refine failed."; return; }
+  showResult(res.letter);
+}
+$("refineBtn").addEventListener("click", () => doRefine($("refineInput").value.trim()));
+$("refineChips").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-refine]");
+  if (btn) doRefine(btn.dataset.refine);
+});
+$("downloadBtn").addEventListener("click", async () => {
+  if (!lastContent) return;
+  busy($("downloadBtn"), true, "Building…");
+  try {
+    const res = await fetch("/download-docx", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: lastContent, profile: currentProfile(),
+        job_title: $("jobTitle").value.trim(), org_name: $("orgName").value.trim(),
+      }),
+    });
+    if (!res.ok) { $("resultErr").textContent = "Download failed."; return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "CoverLetter.docx";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } finally {
+    busy($("downloadBtn"), false, "Download .docx");
+  }
+});
+
+// ---- init ------------------------------------------------------------------
+loadProfile();
+loadProviders();
+</script>
+</body>
+</html>

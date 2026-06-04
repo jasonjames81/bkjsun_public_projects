@@ -16,3 +16,12 @@ _site/
 # counterproductive to check this file into the repository.
 # Details at https://github.com/github/pages-gem/issues/768
 Gemfile.lock
+
+# Python (cover-letter-app and any future Python project)
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# Never commit a user's saved API keys or profile, if ever written into the project dir
+config.json
+contact.json

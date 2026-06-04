@@ -1,0 +1,11 @@
+flask==3.0.0
+python-docx>=1.1.0
+platformdirs>=4.0
+
+# Optional — install only the SDK for the API provider you choose in the UI.
+# The app runs without these; adapters guard the imports and fail with an
+# install hint only if you select that provider without its SDK.
+#   pip install anthropic              # Anthropic (API key)
+#   pip install openai                 # OpenAI (API key)
+#   pip install google-generativeai    # Google Gemini (API key)
+# Ollama (local) needs no Python package — it talks HTTP to localhost:11434.
