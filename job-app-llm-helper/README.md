@@ -9,24 +9,46 @@ provider in the UI.
 `localStorage` and sent with each request. The server keeps no per-user files — only your
 chosen provider + API key (stored locally, file permissions `0600`).
 
-## Download & run on a Mac (no terminal commands)
+## Download & run (no terminal commands)
 
-1. Go to the [**Releases**](https://github.com/jasonjames81/public_projects/releases) page and
-   download `job-app-llm-helper.zip`.
-2. Double-click the zip to unzip it, then open the `job-app-llm-helper` folder.
-3. **Right-click** `start-mac.command` → **Open** → **Open**. (macOS asks the first time
-   because the file was downloaded — you only approve it once. After that, double-click works.)
-4. A Terminal window opens, sets things up the first time (~1 minute), and your browser opens
-   to the app. Keep that Terminal window open while you use it; close it to stop.
-5. In the app, open **AI provider**, pick one, and paste an API key.
+Grab `job-app-llm-helper.zip` from the
+[**Releases**](https://github.com/jasonjames81/public_projects/releases) page, unzip it, and
+open the `job-app-llm-helper` folder.
 
-**You need two things:** Python 3 (the launcher tells you where to get it if it's missing) and
-an LLM API key. The simplest key is from Anthropic — create one at
-<https://console.anthropic.com> → *API keys*, then paste it into the app's *AI provider* box.
-(OpenAI and Google keys also work, as does a logged-in `claude` CLI or a local Ollama model.)
+**macOS:** **right-click** `start-mac.command` → **Open** → **Open**. (macOS asks the first
+time because the file was downloaded — you approve it once; after that, double-click works.)
 
-> Everything runs on your own computer. Your profile stays in your browser; your key is stored
-> locally. Nothing is uploaded except your request to the LLM provider you choose.
+**Windows:** double-click `start-windows.bat`. (If "Windows protected your PC" appears, click
+**More info** → **Run anyway**.)
+
+Either way: a window opens, sets things up the first time (~1 minute), and your browser opens
+to the app. Keep that window open while you use it; close it to stop. Then in the app, open
+**AI provider**, pick one, and connect it (next section).
+
+**You need Python 3** — the launcher tells you where to get it if it's missing (on Windows,
+check *"Add python.exe to PATH"* in the installer).
+
+## Connecting an LLM — API key *or* a subscription you already have
+
+You don't have to buy an API key. Pick whichever you've got:
+
+| You have… | Use this | How |
+|---|---|---|
+| An **API key** (Anthropic / OpenAI / Google) | the matching **API key** provider | create a key (e.g. <https://console.anthropic.com> → *API keys*) and paste it into *AI provider* |
+| A **Claude Pro/Max** subscription | **Claude Code (CLI login)** | install [Claude Code](https://docs.anthropic.com/claude-code), run `claude` once to log in with your subscription — no API key |
+| A **ChatGPT Plus** subscription | **Codex (CLI login)** | install the Codex CLI and sign in with your ChatGPT account |
+| A **Google / Gemini** account | **Gemini (CLI login)** | install the Gemini CLI and sign in with Google |
+| **Nothing / want offline** | **Ollama (local model)** | install [Ollama](https://ollama.com), pull a model — runs free and offline |
+
+The app auto-detects which of these are available and shows them in *AI provider* with a ✓.
+
+> **Why no "just log into claude.ai" option?** A web subscription (claude.ai, the ChatGPT
+> website, the Gemini web app) has no API behind it, and scraping or automating the website
+> violates those services' terms and risks your account. The official CLIs above are the
+> supported, ToS-compliant way to use a subscription — they log in with the same account.
+
+> Everything runs on your own computer. Your profile stays in your browser; your key (if any)
+> is stored locally. Nothing is uploaded except your request to the provider you choose.
 
 ## Quick start (developers)
 

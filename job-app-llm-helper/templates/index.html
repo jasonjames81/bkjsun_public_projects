@@ -73,7 +73,12 @@
   <div class="card">
     <details class="settings" id="settingsBox">
       <summary>AI provider <span class="pill" id="providerPill">checking…</span></summary>
-      <p class="hint" style="margin-top:10px">Pick where generation runs. A bring-your-own API key (Anthropic, OpenAI, Google) works on any machine; a logged-in CLI or local Ollama model also work if available.</p>
+      <p class="hint" style="margin-top:10px">Pick where generation runs:</p>
+      <ul class="hint" style="margin:4px 0 10px 18px; padding:0">
+        <li><strong>API key</strong> (Anthropic / OpenAI / Google) — works on any machine.</li>
+        <li><strong>Have a Claude, ChatGPT, or Gemini subscription but no API key?</strong> Install that service's CLI and log in once — it appears here as "(CLI login)" with no key needed. (A web/claude.ai tab alone can't be used; the CLI is the supported bridge.)</li>
+        <li><strong>Ollama</strong> — a free local model, fully offline, no account.</li>
+      </ul>
       <label for="providerSelect">Provider</label>
       <select id="providerSelect"></select>
       <div id="modelWrap" style="display:none">
