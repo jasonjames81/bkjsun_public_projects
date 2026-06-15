@@ -15,8 +15,17 @@ Grab `job-app-llm-helper.zip` from the
 [**Releases**](https://github.com/jasonjames81/public_projects/releases) page, unzip it, and
 open the `job-app-llm-helper` folder.
 
-**macOS:** **right-click** `start-mac.command` → **Open** → **Open**. (macOS asks the first
-time because the file was downloaded — you approve it once; after that, double-click works.)
+**macOS:** **right-click** (or Control-click) `start-mac.command` → **Open** → **Open**. macOS
+blocks downloaded files the first time; you approve it once, then double-click works after that.
+
+> **If macOS says "Apple could not verify…" with only *Move to Trash* / *Cancel*** (macOS 15
+> Sequoia and later removed the right-click bypass): open **System Settings → Privacy &
+> Security**, scroll to the bottom, and click **Open Anyway** next to the blocked-file notice —
+> then launch the file again.
+>
+> Still stuck? Open the **Terminal** app, type `xattr -cr ` (with the trailing space), drag the
+> `job-app-llm-helper` folder onto the window, and press Return. That clears the download flag
+> from every file at once; the launcher then opens normally.
 
 **Windows:** double-click `start-windows.bat`. (If "Windows protected your PC" appears, click
 **More info** → **Run anyway**.)

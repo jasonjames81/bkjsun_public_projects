@@ -3,8 +3,12 @@
 #
 # HOW TO USE:
 #   1. Double-click this file in Finder.
-#   2. First time only: macOS may say it's from an unidentified developer.
-#      Right-click the file → Open → Open. (You only do this once.)
+#   2. First time only: macOS blocks downloaded files.
+#      - macOS 14 and earlier: right-click (Control-click) the file → Open → Open.
+#      - macOS 15 Sequoia+ (only "Move to Trash"/"Cancel" shown): open
+#        System Settings → Privacy & Security, click "Open Anyway", then launch again.
+#      - Bulletproof: in Terminal run  xattr -cr  <this folder>  (drag the folder in).
+#      You only do this once; after that, double-click works.
 #
 # It sets up everything on first run (about a minute), then opens the app in
 # your browser. Keep the Terminal window open while you use it.
