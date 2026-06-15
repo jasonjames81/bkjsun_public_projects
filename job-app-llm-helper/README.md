@@ -1,9 +1,10 @@
 # Job App LLM Helper
 
-A Flask web app that turns a job posting into a tailored, voice-matched cover letter —
-using **whatever LLM access you have**: a bring-your-own API key (Anthropic / OpenAI /
-Google), a logged-in AI CLI (Claude / Gemini / Codex), or a local Ollama model. Pick your
-provider in the UI.
+A Flask web app that turns a job posting into a tailored, voice-matched cover letter and
+coaches you through prep questions for interviews or applications — all grounded in your
+own resume, LinkedIn, and writing samples. It runs on **whatever LLM access you have**: a
+bring-your-own API key (Anthropic / OpenAI / Google), a logged-in AI CLI (Claude / Gemini /
+Codex), or a local Ollama model. Pick your provider in the UI.
 
 **Your data stays in your browser.** You paste your background once; it's saved in
 `localStorage` and sent with each request. The server keeps no per-user files — only your
@@ -11,9 +12,10 @@ chosen provider + API key (stored locally, file permissions `0600`).
 
 ## Download & run
 
-Grab `job-app-llm-helper.zip` from the
-[**Releases**](https://github.com/jasonjames81/public_projects/releases) page, unzip it, and
-open the `job-app-llm-helper` folder.
+1. Grab `job-app-llm-helper.zip` from the
+   [**Releases**](https://github.com/jasonjames81/public_projects/releases) page.
+2. Unzip it.
+3. Open the `job-app-llm-helper` folder.
 
 **Linux:** open a terminal in the unzipped folder and run `./start.sh`. (If it isn't
 executable yet, run `chmod +x start.sh` first.) No security prompt — Linux doesn't quarantine
