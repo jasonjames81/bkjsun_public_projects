@@ -102,10 +102,16 @@ Your profile (once)  +  a job posting
    Keys are stored locally (`platformdirs` config dir, `0600`), or read from
    `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GOOGLE_API_KEY` env vars. The app auto-selects
    the first available provider; *Generate* is blocked until one is ready.
-2. **Your profile** — name, optional contact fields, and your background. Type/paste it, or
-   **import from a file or link** (see below). Optionally add writing samples (to match your
-   voice) and story notes (accomplishments with numbers). Saved in your browser.
-3. **The job** — title, organization, job description, optional "about the org".
+2. **Your profile** — start with **Import resume or CV** (file, link, or public LinkedIn):
+   it fills your background and auto-detects name, email, phone, city/state, and LinkedIn. You
+   can import **up to 2** (e.g. your resume *and* your LinkedIn) — both are merged. Edit
+   anything by hand. Optionally **import writing samples** (**up to 4**, to match your voice).
+   Saved in your browser. (Use *Recall your experiences*, below, to add specific accomplishments.)
+3. **The job** — **Import job posting** (file or link) to auto-split title, organization, and
+   description, or fill them in by hand. Optionally **Import org website** — paste their
+   homepage and it crawls about/mission/news/blog and summarizes mission + recent activity
+   into "about the org" (recent-post coverage depends on what the site exposes; dates aren't
+   guaranteed).
 4. **Check fit** — a traffic-light recommendation (proceed / caution / skip) with match
    score, strengths, concerns, and keyword overlap — before you spend a generation.
 5. **Recall your experiences** *(optional)* — get questions tailored to the role; your
@@ -119,15 +125,19 @@ Your profile (once)  +  a job posting
    free-form instruction.
 9. **Download** — a formatted `.docx` with your contact header, date, body, and signature.
 
-## Importing your background from a file or link
+## Importing from a file or link
 
-Instead of pasting, point the **import** box (under *Background*) at:
+The **Import** buttons (resume, writing samples, job posting) each open a small dialog where
+you can either:
 
-- a **local file** — `~/Documents/resume.docx`, a `.pdf`, `.txt`, `.md`, or `.html`;
-- a **web link** — a Google Doc **published to the web** (File → Share → Publish to web), a
+- **browse your computer** (or drag a file in) — `.docx`, `.pdf`, `.txt`, `.md`, or `.html`;
+- **paste a link** — a Google Doc **published to the web** (File → Share → Publish to web), a
   personal site, or any public page.
 
-The text is extracted and appended to *Background*. `.docx` needs `pandoc`; `.pdf` needs
+Resume import fills *Background* and auto-detects your contact fields (up to 2 imports merge);
+a job-posting import is split into title / organization / description; an org-website import
+crawls the homepage plus common about/mission/news/blog paths and summarizes them. `.docx`
+needs `pandoc`; `.pdf` needs
 `pdftotext` (poppler) — both optional, with a clear message if missing. LinkedIn profile
 URLs generally require login and won't extract — paste that text or use a public link.
 

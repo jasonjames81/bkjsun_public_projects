@@ -86,6 +86,101 @@ def call_llm(prompt: str, *, retries: int = 1) -> str:
     return result.strip()
 
 
+def extract_contact_fields(text: str) -> dict:
+    """Pull a name and city/state out of pasted resume/profile text via the LLM.
+
+    Email, phone, and LinkedIn are recovered by regex upstream (no model needed);
+    this fills only the two fields regex handles poorly. Returns {} on failure so
+    the caller can degrade gracefully (the user just types those fields by hand).
+    """
+    text = (text or "").strip()
+    if not text:
+        return {}
+    snippet = text[:6000]
+    prompt = f"""From the resume / profile text below, extract the applicant's full name
+and their location as "City, State" (or "City, Country").
+
+Return ONLY a JSON object, no prose, no markdown fences:
+{{"name": "<full name or empty string>", "city_state": "<City, State or empty string>"}}
+
+Use an empty string for any field you cannot determine. Do not guess.
+
+=== TEXT ===
+{snippet}"""
+    raw = call_llm(prompt)
+    data = _extract_json(raw)
+    if not isinstance(data, dict):
+        return {}
+    return {
+        "name": str(data.get("name") or "").strip(),
+        "city_state": str(data.get("city_state") or "").strip(),
+    }
+
+
+def extract_job_fields(text: str) -> dict:
+    """Split a pasted/imported job posting into structured fields via the LLM.
+
+    Returns {"job_title", "org_name", "job_description", "org_about"}. Raises on
+    model failure so the caller can fall back to dumping the raw text into the
+    description field.
+    """
+    text = (text or "").strip()
+    if not text:
+        return {}
+    snippet = text[:12000]
+    prompt = f"""From the job posting below, extract these fields.
+
+Return ONLY a JSON object, no prose, no markdown fences:
+{{
+  "job_title": "<the role title>",
+  "org_name": "<the hiring organization / company name>",
+  "job_description": "<the responsibilities, requirements, and role details, cleaned of navigation/boilerplate but otherwise verbatim>",
+  "org_about": "<any 'about the company / mission / values' section, or empty string>"
+}}
+
+Use an empty string for any field not present. Do not invent details. Keep the
+job_description substantive — it feeds cover-letter generation.
+
+=== JOB POSTING ===
+{snippet}"""
+    raw = call_llm(prompt)
+    data = _extract_json(raw)
+    if not isinstance(data, dict):
+        return {}
+    return {
+        "job_title": str(data.get("job_title") or "").strip(),
+        "org_name": str(data.get("org_name") or "").strip(),
+        "job_description": str(data.get("job_description") or "").strip(),
+        "org_about": str(data.get("org_about") or "").strip(),
+    }
+
+
+def summarize_org(text: str) -> str:
+    """Condense crawled org-website text into a mission/values + recent-activity brief.
+
+    Returns prose suitable for the "About the organization" field. Raises on model
+    failure so the caller can fall back to the raw crawled text.
+    """
+    text = (text or "").strip()
+    if not text:
+        return ""
+    snippet = text[:20000]
+    prompt = f"""Below is text crawled from an organization's website (multiple pages,
+each tagged with its URL). Write a concise brief for a job applicant, covering:
+
+- Mission / what the organization does and the values it states.
+- Any recent activity (posts, news, blog items, announcements) you can find — note the
+  date only if it actually appears in the text; do not guess or assume recency.
+
+Write plain prose (a few short paragraphs), no markdown headings, no preamble. Use only
+what the text supports — do not invent programs, dates, or claims. If recent posts aren't
+present, say the site didn't surface dated recent activity.
+
+=== CRAWLED SITE TEXT ===
+{snippet}"""
+    return call_llm(prompt).strip()
+
+
 def refine_letter(
     current_letter: str,
     instruction: str,

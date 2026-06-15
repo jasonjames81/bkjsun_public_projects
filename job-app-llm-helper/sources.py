@@ -81,12 +81,42 @@ def _pdftotext(data: bytes) -> str:
     return r.stdout
 
 
+_SUPPORTED_SUFFIXES = (".docx", ".pdf", ".txt", ".md", ".html", ".htm")
+
+
 def load_path(path: str) -> str:
     p = Path(path).expanduser()
     if not p.exists() or not p.is_file():
         raise SourceError(f"file not found: {p}")
     if p.stat().st_size > _MAX_BYTES:
         raise SourceError("file is too large (over 5 MB)")
+    return _parse_file(p)
+
+
+def load_upload(filename: str, data: bytes) -> str:
+    """Parse the bytes of a browser-uploaded file, dispatching on its extension.
+
+    Mirrors load_path but for content that never lands at a user-controlled path —
+    the file picker hands us bytes plus a name, so we stage them in a temp file with
+    the right suffix and reuse the same extractors.
+    """
+    if len(data) > _MAX_BYTES:
+        raise SourceError("file is too large (over 5 MB)")
+    suffix = Path(filename or "").suffix.lower()
+    if suffix not in _SUPPORTED_SUFFIXES:
+        raise SourceError(
+            f"unsupported file type '{suffix or '?'}'. Use .docx, .pdf, .txt, .md, or .html"
+        )
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(data)
+        tmp_path = Path(tmp.name)
+    try:
+        return _parse_file(tmp_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
+def _parse_file(p: Path) -> str:
     suffix = p.suffix.lower()
 
     if suffix == ".docx":
@@ -133,6 +163,51 @@ def load_url(url: str) -> str:
     if "html" in ctype or "<html" in text[:2000].lower():
         text = _strip_gdocs_boilerplate(_strip_html(text))
     return text
+
+
+# Common paths where an org states its mission / posts news. Tried best-effort on
+# top of whatever URL the user pastes; missing ones are skipped silently.
+_ORG_PATHS = ("", "/about", "/about-us", "/mission", "/news", "/blog", "/press")
+_CRAWL_MAX_CHARS = 40_000
+
+
+def crawl_site(url: str) -> str:
+    """Best-effort fetch of an org's homepage plus common about/news/blog paths.
+
+    Returns concatenated readable text (capped), each section tagged with the URL it
+    came from. Self-host only — fetches arbitrary URLs on the host. Raises SourceError
+    only if nothing at all could be fetched; partial failures are skipped silently.
+    """
+    parsed = urlparse(url if "://" in url else f"https://{url}")
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise SourceError("provide a website URL (http/https)")
+    base = f"{parsed.scheme}://{parsed.netloc}"
+    # Honor a specific path the user gave, then try the common ones.
+    candidates: list[str] = []
+    given = parsed.path.rstrip("/")
+    if given and given != "":
+        candidates.append(base + given)
+    candidates += [base + p for p in _ORG_PATHS]
+
+    sections: list[str] = []
+    total = 0
+    seen: set[str] = set()
+    for cand in candidates:
+        if cand in seen or total >= _CRAWL_MAX_CHARS:
+            continue
+        seen.add(cand)
+        try:
+            text = load_url(cand).strip()
+        except SourceError:
+            continue
+        if len(text) < 80:  # skip empty/redirect stubs
+            continue
+        chunk = text[: _CRAWL_MAX_CHARS - total]
+        sections.append(f"--- {cand} ---\n{chunk}")
+        total += len(chunk)
+    if not sections:
+        raise SourceError("couldn't fetch any readable pages from that site")
+    return "\n\n".join(sections)
 
 
 def load_source(ref: str) -> dict:

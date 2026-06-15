@@ -16,19 +16,47 @@ from flask import Flask, Response, jsonify, render_template, request
 
 import profile as profile_mod
 from docx_writer import build_cover_letter_docx, extract_cover_letter_section
+import re
+
 from generator import (
     analyze_fit,
     answer_application_questions,
+    extract_contact_fields,
+    extract_job_fields,
     generate_clarifying_questions,
     generate_cover_letter,
     generate_questions,
     refine_letter,
+    summarize_org,
 )
 import cli_auth
 from providers.config import ProviderConfig
 from providers.detect import detect_providers
 from providers.registry import list_models
-from sources import SourceError, load_source
+from sources import SourceError, crawl_site, load_source, load_upload
+
+# Contact fields recoverable without a model. LinkedIn/email/phone are regular enough
+# for regex; name and city/state are left to the LLM (extract_contact_fields).
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_PHONE_RE = re.compile(r"(?<![\d(])(\+?\(?\d[\d().\-\s]{7,}\d)(?!\d)")
+_LINKEDIN_RE = re.compile(r"(?:https?://)?(?:www\.)?linkedin\.com/in/[^\s)>\]]+", re.I)
+
+
+def _regex_contact(text: str) -> dict:
+    """Pull email / phone / LinkedIn out of resume text — no model needed."""
+    email = _EMAIL_RE.search(text)
+    linkedin = _LINKEDIN_RE.search(text)
+    phone = _PHONE_RE.search(text)
+    fields = {}
+    if email:
+        fields["email"] = email.group(0)
+    if phone:
+        fields["phone"] = phone.group(1).strip()
+    if linkedin:
+        url = linkedin.group(0)
+        fields["linkedin"] = url if url.startswith("http") else f"https://{url}"
+    return fields
+
 
 app = Flask(__name__)
 
@@ -106,6 +134,91 @@ def load_source_route():
             "text": result["text"],
             "chars": len(result["text"]),
         }
+    )
+
+
+@app.route("/upload-source", methods=["POST"])
+def upload_source_route():
+    """Parse a browser-uploaded resume/sample/posting file (self-host only — see sources.py)."""
+    f = request.files.get("file")
+    if f is None or not f.filename:
+        return jsonify({"ok": False, "error": "no file uploaded"}), 400
+    try:
+        text = load_upload(f.filename, f.read())
+        text = (text or "").strip()
+        if not text:
+            return jsonify(
+                {"ok": False, "error": "no readable text found in that file"}
+            )
+    except SourceError as e:
+        return jsonify({"ok": False, "error": str(e)})
+    except Exception as e:  # noqa: BLE001 — surface any unexpected failure to the UI
+        return jsonify({"ok": False, "error": f"could not read file: {e}"})
+    return jsonify({"ok": True, "kind": "file", "text": text, "chars": len(text)})
+
+
+@app.route("/extract-contact", methods=["POST"])
+def extract_contact_route():
+    """Best-effort structured contact extraction from imported resume text.
+
+    Regex fills email/phone/LinkedIn (always); the LLM fills name + city/state when
+    a provider is configured. Never an error — missing fields just stay blank.
+    """
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+    fields = _regex_contact(text)
+    try:
+        fields.update({k: v for k, v in extract_contact_fields(text).items() if v})
+    except Exception:  # noqa: BLE001 — no provider / model error: keep regex fields
+        pass
+    return jsonify({"ok": True, "fields": fields})
+
+
+@app.route("/extract-job", methods=["POST"])
+def extract_job_route():
+    """Split imported job-posting text into structured fields via the LLM.
+
+    Falls back to dumping the raw text into job_description when no provider is set
+    up or the model can't parse it, so import always yields something usable.
+    """
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+    if not text:
+        return jsonify({"ok": False, "error": "no text to parse"}), 400
+    try:
+        fields = extract_job_fields(text)
+        if fields.get("job_description"):
+            return jsonify({"ok": True, "fields": fields})
+    except Exception:  # noqa: BLE001 — degrade to raw dump below
+        pass
+    return jsonify({"ok": True, "fallback": True, "fields": {"job_description": text}})
+
+
+@app.route("/import-org", methods=["POST"])
+def import_org_route():
+    """Crawl an org website (about/mission/news/blog) and summarize it via the LLM.
+
+    Falls back to the raw crawled text when no provider is configured or the model
+    fails. Self-host only — fetches arbitrary URLs on the host (see sources.py).
+    """
+    data = request.get_json(silent=True) or {}
+    url = (data.get("url") or "").strip()
+    if not url:
+        return jsonify({"ok": False, "error": "provide a website URL"}), 400
+    try:
+        crawled = crawl_site(url)
+    except SourceError as e:
+        return jsonify({"ok": False, "error": str(e)})
+    except Exception as e:  # noqa: BLE001 — surface any unexpected fetch failure
+        return jsonify({"ok": False, "error": f"could not crawl site: {e}"})
+    try:
+        summary = summarize_org(crawled)
+        if summary:
+            return jsonify({"ok": True, "text": summary, "chars": len(summary)})
+    except Exception:  # noqa: BLE001 — degrade to raw crawled text below
+        pass
+    return jsonify(
+        {"ok": True, "fallback": True, "text": crawled, "chars": len(crawled)}
     )
 
 
@@ -383,4 +496,19 @@ if __name__ == "__main__":
             % port
         )
     print()
+
+    # Pop the browser open so the user lands in the UI instead of staring at the
+    # terminal. Skip when bound to all interfaces (likely headless/LAN) or when
+    # opted out via env. Guard against the debug reloader opening a second tab:
+    # only the reloaded child (WERKZEUG_RUN_MAIN) — or the sole process when
+    # debug is off — should open it.
+    no_browser = os.environ.get("JALLM_NO_BROWSER", "").lower() in ("1", "true", "yes")
+    is_reloader_child = os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+    if not no_browser and host != "0.0.0.0" and (not debug or is_reloader_child):
+        import threading
+        import webbrowser
+
+        url = f"http://localhost:{port}"
+        threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+
     app.run(debug=debug, host=host, port=port)

@@ -60,6 +60,49 @@
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -2px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (max-width: 600px) { .wrap { padding: 12px; } .btns button { flex: 1 1 100%; } }
+
+  /* big import button */
+  .bigimport {
+    width: 100%; display: flex; align-items: center; justify-content: center;
+    gap: 10px; padding: 18px 20px; font-size: 1.02rem; font-weight: 600;
+    border: 2px dashed var(--accent); border-radius: var(--radius);
+    background: #f0f6fc; color: var(--accent); min-height: 64px; line-height: 1.3;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .bigimport:hover { background: #e6f0fa; border-color: #1f5b96; }
+  .bigimport .ico { font-size: 1.3rem; }
+  .bigimport .sub { display: block; font-weight: 400; font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .bigimport .lab { display: flex; flex-direction: column; align-items: flex-start; }
+
+  /* import modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(20, 26, 38, 0.55);
+    display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;
+  }
+  .modal {
+    background: var(--card); border-radius: var(--radius); padding: 22px;
+    width: 100%; max-width: 460px; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .modal h3 { margin: 0 0 4px; font-size: 1.15rem; }
+  .modal .hint { margin: 0 0 16px; }
+  .modal .drop {
+    border: 2px dashed var(--line); border-radius: 10px; padding: 22px 16px;
+    text-align: center; cursor: pointer; background: #fbfcfe; transition: border-color 0.15s, background 0.15s;
+  }
+  .modal .drop:hover, .modal .drop.over { border-color: var(--accent); background: #f0f6fc; }
+  .modal .drop strong { color: var(--accent); }
+  .modal .or { text-align: center; color: var(--muted); font-size: 0.8rem; margin: 14px 0; position: relative; }
+  .modal .or::before, .modal .or::after { content: ""; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--line); }
+  .modal .or::before { left: 0; } .modal .or::after { right: 0; }
+  .modal .modal-close { background: #fff; color: var(--muted); border: 1px solid var(--line); }
+  .modal-status { font-size: 0.85rem; margin-top: 12px; }
+
+  /* collapsible paste box */
+  details.collapse { margin-top: 10px; }
+  details.collapse > summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--accent); list-style: none; }
+  details.collapse > summary::-webkit-details-marker { display: none; }
+  details.collapse > summary::before { content: "▸ "; }
+  details.collapse[open] > summary::before { content: "▾ "; }
 </style>
 </head>
 <body>
@@ -108,6 +151,15 @@
   <div class="card">
     <h2>Your profile</h2>
     <p class="hint">Saved in this browser only (localStorage). Reused for every letter until you change it.</p>
+
+    <button type="button" id="importResumeBtn" class="bigimport">
+      <span class="ico">📄</span>
+      <span class="lab">Import resume or CV — from file, link, or LinkedIn
+        <span class="sub">We'll fill in your name, contact, and background automatically</span></span>
+    </button>
+    <p class="hint" id="resumeCount" style="margin:4px 0 0">Import up to 2 — e.g. your resume and your LinkedIn.</p>
+    <div class="status" id="sourceStatus"></div>
+
     <div class="row">
       <div><label for="applicantName">Full name</label><input id="applicantName" placeholder="Ada Lovelace"></div>
       <div><label for="cityState">City, State <span class="opt">(optional)</span></label><input id="cityState" placeholder="London, UK"></div>
@@ -117,18 +169,22 @@
       <div><label for="email">Email <span class="opt">(optional)</span></label><input id="email"></div>
       <div><label for="linkedin">LinkedIn <span class="opt">(optional)</span></label><input id="linkedin"></div>
     </div>
-    <label for="background">Background — paste your resume, experience, or LinkedIn text</label>
-    <textarea id="background" style="min-height:160px" placeholder="Paste your resume / work history here. The more detail, the better the letter."></textarea>
-    <label for="sourceRef">…or import from a file or link <span class="opt">— a resume in your Documents folder, a published Google Doc, a personal site</span></label>
-    <div class="row">
-      <div style="flex:3 1 220px"><input id="sourceRef" placeholder="/home/you/Documents/resume.docx  ·  https://docs.google.com/.../pub"></div>
-      <div style="flex:1 1 90px"><button type="button" id="loadSourceBtn" class="ghost">Import</button></div>
-    </div>
-    <div class="status" id="sourceStatus"></div>
-    <label for="writingSamples">Writing samples <span class="opt">(optional) — prose the AI should match in voice</span></label>
-    <textarea id="writingSamples" placeholder="Paste a past cover letter or any writing in your voice. Separate multiple samples with a blank line."></textarea>
-    <label for="stories">Story notes <span class="opt">(optional) — specific accomplishments with numbers/outcomes</span></label>
-    <textarea id="stories" placeholder="e.g. Led a 30-person team that delivered X under Y constraint, finishing on time and 10% under budget."></textarea>
+
+    <details class="collapse" id="backgroundBox" open>
+      <summary id="backgroundSummary">Background — paste your resume, experience, or LinkedIn text</summary>
+      <textarea id="background" style="min-height:160px; margin-top:8px" placeholder="Paste your resume / work history here, or use Import above. The more detail, the better the letter."></textarea>
+    </details>
+
+    <label>Writing samples <span class="opt">(optional) — prose the AI should match in voice</span></label>
+    <button type="button" id="importSamplesBtn" class="bigimport" style="margin-bottom:8px">
+      <span class="ico">✍️</span>
+      <span class="lab">Import writing samples — from file or link
+        <span class="sub">A past cover letter, essay, or anything in your voice</span></span>
+    </button>
+    <p class="hint" id="samplesCount" style="margin:0 0 4px">Import up to 4 samples.</p>
+    <div class="status" id="samplesStatus"></div>
+    <textarea id="writingSamples" placeholder="…or paste here. Separate multiple samples with a blank line."></textarea>
+
     <div class="btns">
       <button type="button" id="saveProfileBtn">Save profile</button>
       <button type="button" id="clearProfileBtn" class="ghost">Clear</button>
@@ -139,6 +195,12 @@
   <!-- JOB -->
   <div class="card">
     <h2>The job</h2>
+    <button type="button" id="importJobBtn" class="bigimport">
+      <span class="ico">💼</span>
+      <span class="lab">Import job posting — from file or link
+        <span class="sub">We'll split out the title, organization, and description</span></span>
+    </button>
+    <div class="status" id="jobImportStatus"></div>
     <div class="row">
       <div><label for="jobTitle">Job title</label><input id="jobTitle" placeholder="Program Manager"></div>
       <div><label for="orgName">Organization</label><input id="orgName" placeholder="Example Foundation"></div>
@@ -146,7 +208,13 @@
     <label for="jobDescription">Job description</label>
     <textarea id="jobDescription" style="min-height:140px" placeholder="Paste the full job posting."></textarea>
     <label for="orgAbout">About the organization <span class="opt">(optional)</span></label>
-    <textarea id="orgAbout" placeholder="Mission / values, if not already in the description."></textarea>
+    <button type="button" id="importOrgBtn" class="bigimport" style="margin-bottom:8px">
+      <span class="ico">🌐</span>
+      <span class="lab">Import org website — mission, about, recent news
+        <span class="sub">Paste their homepage link; we crawl about/mission/news/blog and summarize</span></span>
+    </button>
+    <div class="status" id="orgImportStatus"></div>
+    <textarea id="orgAbout" placeholder="Mission / values, if not already in the description — or use Import above."></textarea>
     <div class="btns">
       <button type="button" id="fitBtn" class="ghost">Check fit</button>
     </div>
@@ -206,6 +274,26 @@ Describe a time you led under pressure. (200 words)"></textarea>
   </div>
 </div>
 
+<!-- IMPORT MODAL (shared by resume / writing samples / job) -->
+<div class="modal-overlay" id="importModal" style="display:none">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="importTitle">Import</h3>
+    <p class="hint" id="importHint">Browse your computer, or paste a link.</p>
+    <div class="drop" id="importDrop">
+      <strong>Browse your computer</strong><br>
+      <span class="hint">or drag a file here — .pdf, .docx, .txt, .md, .html</span>
+      <input type="file" id="importFile" accept=".pdf,.docx,.txt,.md,.html,.htm" style="display:none">
+    </div>
+    <div class="or">or paste a link</div>
+    <div class="row">
+      <div style="flex:3 1 200px"><input id="importLink" placeholder="https://… (published Google Doc, personal site, LinkedIn public profile)"></div>
+      <div style="flex:1 1 90px"><button type="button" id="importLinkBtn" class="ghost">Import</button></div>
+    </div>
+    <div class="modal-status" id="importStatus"></div>
+    <div class="btns"><button type="button" id="importCancelBtn" class="modal-close">Cancel</button></div>
+  </div>
+</div>
+
 <script>
 "use strict";
 
@@ -238,7 +326,7 @@ function busy(btn, on, label) {
 // ---- profile (localStorage) ------------------------------------------------
 const PROFILE_KEY = "cla_profile_v1";
 const PROFILE_FIELDS = ["applicantName", "cityState", "phone", "email", "linkedin",
-  "background", "writingSamples", "stories"];
+  "background", "writingSamples"];
 
 function readProfileForm() {
   return {
@@ -252,7 +340,6 @@ function readProfileForm() {
     },
     background: $("background").value.trim(),
     writing_samples: $("writingSamples").value.trim(),
-    stories: $("stories").value.trim(),
   };
 }
 function saveProfile() {
@@ -274,7 +361,14 @@ $("saveProfileBtn").addEventListener("click", saveProfile);
 $("clearProfileBtn").addEventListener("click", () => {
   if (!confirm("Clear your saved profile from this browser?")) return;
   localStorage.removeItem(PROFILE_KEY);
+  localStorage.removeItem(COUNT_KEY);
   PROFILE_FIELDS.forEach((f) => ($(f).value = ""));
+  importCounts = { resume: 0, samples: 0 };
+  renderCounts();
+  $("sourceStatus").innerHTML = "";
+  $("samplesStatus").innerHTML = "";
+  $("backgroundBox").open = true;
+  $("backgroundSummary").textContent = "Background — paste your resume, experience, or LinkedIn text";
 });
 // auto-save on edit (debounced)
 let saveTimer = null;
@@ -285,24 +379,193 @@ PROFILE_FIELDS.forEach((f) =>
   })
 );
 
-// ---- import background from a file path or URL -----------------------------
-$("loadSourceBtn").addEventListener("click", async () => {
-  const ref = $("sourceRef").value.trim();
-  const st = $("sourceStatus");
-  if (!ref) return;
-  busy($("loadSourceBtn"), true, "Importing…");
-  let res;
-  try { res = await postJSON("/load-source", { ref }); }
-  catch { res = { ok: false, error: "request failed" }; }
-  busy($("loadSourceBtn"), false, "Import");
-  if (!res.ok) { st.innerHTML = `<span class="err">${escapeHtml(res.error || "Failed.")}</span>`; return; }
-  const bg = $("background");
-  const sep = bg.value.trim() ? "\n\n---\n\n" : "";
-  bg.value = bg.value.trim() + sep + res.text;
-  saveProfile();
-  st.innerHTML = `<span class="saved">Imported ${Number(res.chars).toLocaleString()} chars from ${escapeHtml(res.kind)} into Background ✓</span>`;
-  $("sourceRef").value = "";
+// ---- shared import modal (file upload or link) -----------------------------
+// openImport({title, hint, onText, linkOnly, fetchLink, linkBusy}) pops the modal;
+// onText(text, meta) runs once a file or link resolves to text, then it closes.
+// linkOnly hides the file picker; fetchLink(url) overrides the default /load-source
+// call (used by the org crawl), returning {ok, text, error, chars, fallback}.
+let importOnText = null;
+let importFetchLink = null;
+let importLinkBusy = "Importing…";
+function openImport({ title, hint, onText, linkOnly = false, fetchLink = null, linkBusy = "Importing…" }) {
+  importOnText = onText;
+  importFetchLink = fetchLink;
+  importLinkBusy = linkBusy;
+  $("importTitle").textContent = title || "Import";
+  $("importHint").textContent = hint || "Browse your computer, or paste a link.";
+  $("importStatus").innerHTML = "";
+  $("importLink").value = "";
+  $("importFile").value = "";
+  $("importDrop").style.display = linkOnly ? "none" : "";
+  document.querySelector("#importModal .or").style.display = linkOnly ? "none" : "";
+  $("importModal").style.display = "flex";
+}
+function closeImport() {
+  $("importModal").style.display = "none";
+  importOnText = null;
+  importFetchLink = null;
+}
+function importErr(msg) {
+  $("importStatus").innerHTML = `<span class="err">${escapeHtml(msg || "Failed.")}</span>`;
+}
+async function finishImport(text, meta) {
+  const cb = importOnText;
+  closeImport();
+  if (cb) await cb(text, meta || {});
+}
+$("importCancelBtn").addEventListener("click", closeImport);
+$("importModal").addEventListener("click", (e) => { if (e.target === $("importModal")) closeImport(); });
+
+// file: native picker + drag-and-drop, uploaded to /upload-source
+const importDrop = $("importDrop");
+importDrop.addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", () => {
+  if ($("importFile").files[0]) uploadFile($("importFile").files[0]);
 });
+["dragenter", "dragover"].forEach((ev) =>
+  importDrop.addEventListener(ev, (e) => { e.preventDefault(); importDrop.classList.add("over"); }));
+["dragleave", "drop"].forEach((ev) =>
+  importDrop.addEventListener(ev, (e) => { e.preventDefault(); importDrop.classList.remove("over"); }));
+importDrop.addEventListener("drop", (e) => {
+  const f = e.dataTransfer.files[0];
+  if (f) uploadFile(f);
+});
+async function uploadFile(file) {
+  $("importStatus").innerHTML = '<span class="spinner" style="border-color:var(--accent);border-top-color:transparent"></span> Reading file…';
+  const fd = new FormData();
+  fd.append("file", file);
+  let res;
+  try { res = await (await fetch("/upload-source", { method: "POST", body: fd })).json(); }
+  catch { res = { ok: false, error: "upload failed" }; }
+  if (!res.ok) { importErr(res.error); return; }
+  await finishImport(res.text, { source: file.name, chars: res.chars });
+}
+$("importLinkBtn").addEventListener("click", async () => {
+  const ref = $("importLink").value.trim();
+  if (!ref) return;
+  busy($("importLinkBtn"), true, importLinkBusy);
+  const fetcher = importFetchLink || ((u) => postJSON("/load-source", { ref: u }));
+  let res;
+  try { res = await fetcher(ref); }
+  catch { res = { ok: false, error: "request failed" }; }
+  busy($("importLinkBtn"), false, "Import");
+  if (!res.ok) { importErr(res.error); return; }
+  await finishImport(res.text, { source: "link", chars: res.chars, fallback: res.fallback });
+});
+
+// ---- import counts (resume up to 2, writing samples up to 4) ---------------
+const COUNT_KEY = "cla_import_counts_v1";
+const IMPORT_LIMITS = { resume: 2, samples: 4 };
+let importCounts = { resume: 0, samples: 0 };
+function loadCounts() {
+  try { importCounts = { resume: 0, samples: 0, ...JSON.parse(localStorage.getItem(COUNT_KEY) || "{}") }; }
+  catch { importCounts = { resume: 0, samples: 0 }; }
+  renderCounts();
+}
+function saveCounts() { localStorage.setItem(COUNT_KEY, JSON.stringify(importCounts)); }
+function renderCounts() {
+  const r = importCounts.resume, s = importCounts.samples;
+  $("resumeCount").textContent = r >= IMPORT_LIMITS.resume
+    ? "2 of 2 imports used — Clear to re-import."
+    : `Import up to 2 — e.g. your resume and your LinkedIn.${r ? ` (${r} of 2 used)` : ""}`;
+  $("importResumeBtn").disabled = r >= IMPORT_LIMITS.resume;
+  $("samplesCount").textContent = s >= IMPORT_LIMITS.samples
+    ? "4 of 4 samples imported — Clear to re-import."
+    : `Import up to 4 samples.${s ? ` (${s} of 4 used)` : ""}`;
+  $("importSamplesBtn").disabled = s >= IMPORT_LIMITS.samples;
+}
+
+// ---- resume import → fill background + autopopulate contact -----------------
+$("importResumeBtn").addEventListener("click", () => {
+  if (importCounts.resume >= IMPORT_LIMITS.resume) return;
+  openImport({
+    title: "Import resume or CV",
+    hint: "From a file on your computer, or a link to a published Google Doc / personal site / public LinkedIn.",
+    onText: async (text, meta) => {
+      const bg = $("background");
+      const sep = bg.value.trim() ? "\n\n--- imported ---\n\n" : "";
+      bg.value = bg.value.trim() + sep + text;
+      importCounts.resume++; saveCounts(); renderCounts();
+      $("sourceStatus").innerHTML = `<span class="saved">Imported ${Number(meta.chars || text.length).toLocaleString()} chars ✓ — filling in your details…</span>`;
+      $("backgroundBox").open = false;  // minimize the paste box now it's populated
+      $("backgroundSummary").innerHTML = 'Background <span class="opt">— imported, click to view/edit</span>';
+      saveProfile();
+      await autofillContact(bg.value);
+    },
+  });
+});
+async function autofillContact(text) {
+  let res;
+  try { res = await postJSON("/extract-contact", { text }); }
+  catch { res = { ok: false }; }
+  const f = (res && res.fields) || {};
+  const setIfEmpty = (id, val) => { if (val && !$(id).value.trim()) $(id).value = val; };
+  setIfEmpty("applicantName", f.name);
+  setIfEmpty("cityState", f.city_state);
+  setIfEmpty("phone", f.phone);
+  setIfEmpty("email", f.email);
+  setIfEmpty("linkedin", f.linkedin);
+  saveProfile();
+  const got = ["name", "city_state", "phone", "email", "linkedin"].filter((k) => f[k]).length;
+  $("sourceStatus").innerHTML = got
+    ? `<span class="saved">Imported ✓ — filled ${got} contact field${got > 1 ? "s" : ""} from your resume.</span>`
+    : `<span class="saved">Imported ✓ — couldn't auto-detect contact details; add them above if you'd like.</span>`;
+}
+
+// ---- writing-samples import (up to 4) --------------------------------------
+$("importSamplesBtn").addEventListener("click", () => {
+  if (importCounts.samples >= IMPORT_LIMITS.samples) return;
+  openImport({
+    title: "Import writing samples",
+    hint: "A past cover letter, essay, or anything in your voice — from a file or a link.",
+    onText: async (text, meta) => {
+      const ta = $("writingSamples");
+      const sep = ta.value.trim() ? "\n\n\n" : "";
+      ta.value = ta.value.trim() + sep + text;
+      importCounts.samples++; saveCounts(); renderCounts();
+      saveProfile();
+      $("samplesStatus").innerHTML = `<span class="saved">Imported ${Number(meta.chars || text.length).toLocaleString()} chars into writing samples ✓ (${importCounts.samples} of 4)</span>`;
+    },
+  });
+});
+
+// ---- job-posting import → split into fields --------------------------------
+$("importJobBtn").addEventListener("click", () => openImport({
+  title: "Import job posting",
+  hint: "From a file, or a link to the posting. We'll split out the title, organization, and description.",
+  onText: async (text) => {
+    $("jobImportStatus").innerHTML = '<span class="spinner" style="border-color:var(--accent);border-top-color:transparent"></span> Reading the posting…';
+    let res;
+    try { res = await postJSON("/extract-job", { text }); }
+    catch { res = { ok: false }; }
+    const f = (res && res.fields) || {};
+    const setIfEmpty = (id, val) => { if (val && !$(id).value.trim()) $(id).value = val; };
+    setIfEmpty("jobTitle", f.job_title);
+    setIfEmpty("orgName", f.org_name);
+    if (f.job_description) $("jobDescription").value = f.job_description;
+    setIfEmpty("orgAbout", f.org_about);
+    $("jobImportStatus").innerHTML = res && res.fallback
+      ? `<span class="saved">Imported ✓ — couldn't auto-split; full text is in Job description. Fill in title & organization above.</span>`
+      : `<span class="saved">Imported ✓ — title, organization, and description filled in.</span>`;
+  },
+}));
+
+// ---- org-website import → crawl + summarize into "About the org" -----------
+$("importOrgBtn").addEventListener("click", () => openImport({
+  title: "Import org website",
+  hint: "Paste the organization's homepage or About link — we crawl about/mission/news/blog and summarize. (Recent-post coverage depends on what the site exposes; dates aren't guaranteed.)",
+  linkOnly: true,
+  linkBusy: "Crawling…",
+  fetchLink: (url) => postJSON("/import-org", { url }),
+  onText: async (text, meta) => {
+    const ta = $("orgAbout");
+    const sep = ta.value.trim() ? "\n\n" : "";
+    ta.value = ta.value.trim() + sep + text;
+    $("orgImportStatus").innerHTML = meta.fallback
+      ? `<span class="saved">Imported ✓ — added the raw site text (no provider configured to summarize). Trim as needed.</span>`
+      : `<span class="saved">Imported ✓ — mission and recent activity summarized into “About the organization”.</span>`;
+  },
+}));
 
 // ---- job context -----------------------------------------------------------
 function jobContext() {
@@ -719,6 +982,11 @@ $("downloadBtn").addEventListener("click", async () => {
 
 // ---- init ------------------------------------------------------------------
 loadProfile();
+loadCounts();
+if ($("background").value.trim()) {
+  $("backgroundBox").open = false;
+  $("backgroundSummary").innerHTML = 'Background <span class="opt">— saved, click to view/edit</span>';
+}
 loadProviders();
 </script>
 </body>
