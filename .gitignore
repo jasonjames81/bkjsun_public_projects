@@ -25,3 +25,6 @@ __pycache__/
 # Never commit a user's saved API keys or profile, if ever written into the project dir
 config.json
 contact.json
+
+# Internal troubleshooting tracking doc — a polished version ships with the public release
+job-app-llm-helper/TROUBLESHOOTING.md

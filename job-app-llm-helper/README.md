@@ -9,11 +9,15 @@ provider in the UI.
 `localStorage` and sent with each request. The server keeps no per-user files — only your
 chosen provider + API key (stored locally, file permissions `0600`).
 
-## Download & run (no terminal commands)
+## Download & run
 
 Grab `job-app-llm-helper.zip` from the
 [**Releases**](https://github.com/jasonjames81/public_projects/releases) page, unzip it, and
 open the `job-app-llm-helper` folder.
+
+**Linux:** open a terminal in the unzipped folder and run `./start.sh`. (If it isn't
+executable yet, run `chmod +x start.sh` first.) No security prompt — Linux doesn't quarantine
+downloads.
 
 **macOS:** **right-click** (or Control-click) `start-mac.command` → **Open** → **Open**. macOS
 blocks downloaded files the first time; you approve it once, then double-click works after that.
