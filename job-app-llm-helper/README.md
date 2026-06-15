@@ -1,231 +1,126 @@
 # Job App LLM Helper
 
-A Flask web app that turns a job posting into a tailored, voice-matched cover letter and
-coaches you through prep questions for interviews or applications — all grounded in your
-own resume, LinkedIn, and writing samples. It runs on **whatever LLM access you have**: a
-bring-your-own API key (Anthropic / OpenAI / Google), a logged-in AI CLI (Claude / Gemini /
-Codex), or a local Ollama model. Pick your provider in the UI.
+A self-hosted Flask app that turns a job posting into a tailored, voice-matched cover letter —
+plus a fit check, drafted answers to employer questions, and interview prep — all grounded in
+your own resume and writing samples. It runs on **whatever LLM access you have**: a
+bring-your-own API key (Anthropic / OpenAI / Google), a logged-in AI CLI (Claude / Codex /
+Gemini), or a local Ollama model.
 
-**Your data stays in your browser.** You paste your background once; it's saved in
-`localStorage` and sent with each request. The server keeps no per-user files — only your
-chosen provider + API key (stored locally, file permissions `0600`).
+Everything runs on your own machine. Your profile lives in your browser's `localStorage`; your
+API key is stored locally (file permissions `0600`). Nothing is uploaded except the request to
+the provider you pick.
 
 ## Download & run
 
-1. Grab `job-app-llm-helper.zip` from the
-   [**Releases**](https://github.com/jasonjames81/public_projects/releases) page.
-2. Unzip it.
-3. Open the `job-app-llm-helper` folder.
+1. Download `job-app-llm-helper.zip` from the
+   [**Releases**](https://github.com/jasonjames81/public_projects/releases) page, unzip it, and
+   open the `job-app-llm-helper` folder.
+2. Start the launcher for your OS. It sets up a virtualenv on first run (~1 min), then opens the
+   app in your browser. Keep the window open while you use it; close it to stop.
 
-**Linux:** open a terminal in the unzipped folder and run `./start.sh`. (If it isn't
-executable yet, run `chmod +x start.sh` first.) No security prompt — Linux doesn't quarantine
-downloads.
+- **Linux:** `./start.sh` (run `chmod +x start.sh` first if needed)
+- **macOS:** right-click `start-mac.command` → **Open** → **Open**
+- **Windows:** double-click `start-windows.bat` (if SmartScreen warns: **More info → Run anyway**)
 
-**macOS:** **right-click** (or Control-click) `start-mac.command` → **Open** → **Open**. macOS
-blocks downloaded files the first time; you approve it once, then double-click works after that.
+Requires **Python 3** — the launcher links you to it if it's missing.
 
-> **If macOS says "Apple could not verify…" with only *Move to Trash* / *Cancel*** (macOS 15
-> Sequoia and later removed the right-click bypass): open **System Settings → Privacy &
-> Security**, scroll to the bottom, and click **Open Anyway** next to the blocked-file notice —
-> then launch the file again.
->
-> Still stuck? Open the **Terminal** app, type `xattr -cr ` (with the trailing space), drag the
-> `job-app-llm-helper` folder onto the window, and press Return. That clears the download flag
-> from every file at once; the launcher then opens normally.
+> **macOS shows "Apple could not verify…" with only *Move to Trash*?** (Sequoia removed the
+> right-click bypass.) Open **System Settings → Privacy & Security**, scroll down, click **Open
+> Anyway**, then relaunch. Still stuck? In Terminal, type `xattr -cr ` (with a trailing space),
+> drag the `job-app-llm-helper` folder onto the window, and press Return.
 
-**Windows:** double-click `start-windows.bat`. (If "Windows protected your PC" appears, click
-**More info** → **Run anyway**.)
+## Connect an LLM
 
-Either way: a window opens, sets things up the first time (~1 minute), and your browser opens
-to the app. Keep that window open while you use it; close it to stop. Then in the app, open
-**AI provider**, pick one, and connect it (next section).
+You don't need an API key — pick whatever you already have. The app auto-detects what's
+available and marks it ✓ in *AI provider*.
 
-**You need Python 3** — the launcher tells you where to get it if it's missing (on Windows,
-check *"Add python.exe to PATH"* in the installer).
-
-## Connecting an LLM — API key *or* a subscription you already have
-
-You don't have to buy an API key. Pick whichever you've got:
-
-| You have… | Use this | How |
+| You have… | Use | How |
 |---|---|---|
-| An **API key** (Anthropic / OpenAI / Google) | the matching **API key** provider | create a key (e.g. <https://console.anthropic.com> → *API keys*) and paste it into *AI provider* |
-| A **Claude Pro/Max** subscription | **Claude Code (CLI login)** | install [Claude Code](https://docs.anthropic.com/claude-code), run `claude` once to log in with your subscription — no API key |
-| A **ChatGPT Plus** subscription | **Codex (CLI login)** | install the Codex CLI and sign in with your ChatGPT account |
-| A **Google / Gemini** account | **Gemini (CLI login)** | install the Gemini CLI and sign in with Google |
-| **Nothing / want offline** | **Ollama (local model)** | install [Ollama](https://ollama.com), pull a model — runs free and offline |
+| An **API key** (Anthropic / OpenAI / Google) | matching API-key provider | paste it into *AI provider* |
+| **Claude Pro/Max** | **Claude Code (CLI login)** | install [Claude Code](https://docs.anthropic.com/claude-code), run `claude` once to log in |
+| **ChatGPT Plus** | **Codex (CLI login)** | install the Codex CLI, sign in with your ChatGPT account |
+| **Google / Gemini** | **Gemini (CLI login)** | install the Gemini CLI, sign in with Google |
+| **Nothing / offline** | **Ollama (local model)** | install [Ollama](https://ollama.com), pull a model |
 
-The app auto-detects which of these are available and shows them in *AI provider* with a ✓.
+For a CLI provider that's installed but not signed in, click **Connect — open login** in the
+app: it opens the browser sign-in and flips to *Connected ✓* when you're done.
 
-> **Why no "just log into claude.ai" option?** A web subscription (claude.ai, the ChatGPT
-> website, the Gemini web app) has no API behind it, and scraping or automating the website
-> violates those services' terms and risks your account. The official CLIs above are the
-> supported, ToS-compliant way to use a subscription — they log in with the same account.
-
-**Connecting a CLI from inside the app:** select a `(CLI login)` provider in *AI provider*.
-If it's installed but not signed in, click **Connect — open login**: the app opens the CLI's
-browser sign-in in a terminal and detects when you're done (it flips to *Connected ✓*). If
-it isn't installed, the panel shows the one-line install command. The Mac/Windows launchers
-also offer to install Claude Code for you on first run.
-
-> Everything runs on your own computer. Your profile stays in your browser; your key (if any)
-> is stored locally. Nothing is uploaded except your request to the provider you choose.
-
-## Quick start (developers)
-
-```bash
-./start.sh            # macOS/Linux: creates a venv, installs deps, runs the app
-```
-
-Then open <http://localhost:5000>.
-
-Manual setup:
-
-```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python app.py
-```
+> A web subscription alone (claude.ai, the ChatGPT or Gemini websites) has no API behind it and
+> can't be automated within those services' terms. The official CLIs are the supported way to
+> use a subscription — same account, no extra cost.
 
 ## How it works
 
 ```
-Your profile (once)  +  a job posting
-        │
-        ▼
-  Check fit ──► (optional) recall experiences ──► (optional) employer questions
-            ──► Generate (2-pass: draft + voice polish) ──► Refine ──► Download .docx
+Your profile (once) + a job posting
+   └─ Check fit ─► (optional) recall experiences ─► (optional) employer questions
+      ─► Generate (draft + voice polish) ─► Refine ─► Download .docx
 ```
 
-1. **Set up a provider** — open *AI provider*, pick one, and paste an API key if needed.
-   Keys are stored locally (`platformdirs` config dir, `0600`), or read from
-   `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GOOGLE_API_KEY` env vars. The app auto-selects
-   the first available provider; *Generate* is blocked until one is ready.
-2. **Your profile** — start with **Import resume or CV** (file, link, or public LinkedIn):
-   it fills your background and auto-detects name, email, phone, city/state, and LinkedIn. You
-   can import **up to 2** (e.g. your resume *and* your LinkedIn) — both are merged. Edit
-   anything by hand. Optionally **import writing samples** (**up to 4**, to match your voice).
-   Saved in your browser. (Use *Recall your experiences*, below, to add specific accomplishments.)
-3. **The job** — **Import job posting** (file or link) to auto-split title, organization, and
-   description, or fill them in by hand. Optionally **Import org website** — paste their
-   homepage and it crawls about/mission/news/blog and summarizes mission + recent activity
-   into "about the org" (recent-post coverage depends on what the site exposes; dates aren't
-   guaranteed).
-4. **Check fit** — a traffic-light recommendation (proceed / caution / skip) with match
-   score, strengths, concerns, and keyword overlap — before you spend a generation.
-5. **Recall your experiences** *(optional)* — get questions tailored to the role; your
-   answers feed the cover letter.
-6. **Employer application questions** *(optional)* — paste the supplemental questions (with
-   optional limits like `(150 words)`), get clarifying prompts where your profile falls
-   short, then draft grounded answers. These won't be duplicated in the cover letter.
-7. **Generate** — a two-pass cover letter (draft from your profile, then a voice-polish pass
-   that scrubs AI tells), plus resume-tailoring suggestions and interview talking points.
-8. **Refine** — preset chips (tighter, warmer, more confident, different opening) or a
-   free-form instruction.
-9. **Download** — a formatted `.docx` with your contact header, date, body, and signature.
+1. **Provider** — pick one in *AI provider*; *Generate* unlocks once one is ready.
+2. **Your profile** — **Import resume or CV** (file, link, or public LinkedIn; up to 2, e.g.
+   your resume *and* LinkedIn) fills your background and auto-detects name, email, phone,
+   city/state, and LinkedIn. Optionally **import writing samples** (up to 4) to match your voice.
+3. **The job** — **Import job posting** (file or link) splits out title / organization /
+   description. Optionally **Import org website** to crawl about/mission/news and summarize it
+   (recent-post coverage depends on what the site exposes).
+4. **Check fit** — proceed / caution / skip, with match score, strengths, concerns, and keyword
+   overlap, before you spend a generation.
+5. **Recall experiences** and **employer questions** *(optional)* — answer tailored prompts that
+   feed grounded detail into the letter and drafted question answers.
+6. **Generate → Refine → Download** — a two-pass cover letter (draft, then a voice polish that
+   scrubs AI tells) plus resume tips and talking points; refine with presets or your own
+   instruction; download a formatted `.docx`.
 
-## Importing from a file or link
+**Imports:** `.docx` needs `pandoc`, `.pdf` needs `pdftotext` (poppler) — both optional, with a
+clear message if missing. Links work for any public page or a Google Doc *Published to the web*;
+private docs and LinkedIn profiles need login and won't extract.
 
-The **Import** buttons (resume, writing samples, job posting) each open a small dialog where
-you can either:
-
-- **browse your computer** (or drag a file in) — `.docx`, `.pdf`, `.txt`, `.md`, or `.html`;
-- **paste a link** — a Google Doc **published to the web** (File → Share → Publish to web), a
-  personal site, or any public page.
-
-Resume import fills *Background* and auto-detects your contact fields (up to 2 imports merge);
-a job-posting import is split into title / organization / description; an org-website import
-crawls the homepage plus common about/mission/news/blog paths and summarizes them. `.docx`
-needs `pandoc`; `.pdf` needs
-`pdftotext` (poppler) — both optional, with a clear message if missing. LinkedIn profile
-URLs generally require login and won't extract — paste that text or use a public link.
-
-> Importing reads local files and fetches URLs **on the machine running the app**. That's
-> fine for the intended single-user, self-hosted setup. Do not expose this app as a shared
-> public server (see *Deploying*).
-
-## Providers (quick reference)
-
-See [*Connecting an LLM*](#connecting-an-llm--api-key-or-a-subscription-you-already-have)
-above for how to set each one up.
-
-| Kind | Examples | Notes |
-|---|---|---|
-| API key | Anthropic, OpenAI, Google | Works on any machine. Bring your own key. |
-| CLI | Claude, Gemini, Codex | Uses a subscription via the official CLI. Sign in with the in-app **Connect — open login** button. |
-| Local | Ollama | Runs fully offline against a local model. No account. |
-
-## Configuration
-
-`config.py` only tunes the default Claude-CLI model (`CLAUDE_MODEL`) and the CLI subprocess
-timeout. There are **no document paths** — the profile is supplied at runtime by the browser.
-
-## Deploying
-
-This app is built to be **self-hosted, one user per instance** — run your own copy with
-your own key. It is *not* a multi-tenant service: the API key and provider choice are stored
-on the server, so one shared public instance would let every visitor spend the host's key,
-and the *import* feature would read the host's files. Run it locally (or on your own box).
-
-**Run it (production-safe defaults):**
+## Run from source
 
 ```bash
-python app.py            # binds 127.0.0.1:5000, debug OFF
+./start.sh            # creates a venv, installs deps, runs the app
+# …or manually:
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python app.py         # http://localhost:5000
 ```
 
-Environment overrides:
+Keys are read from the `platformdirs` config dir (`0600`) or the `ANTHROPIC_API_KEY` /
+`OPENAI_API_KEY` / `GOOGLE_API_KEY` env vars.
 
-| Var | Default | Purpose |
+| Env var | Default | Purpose |
 |---|---|---|
-| `JALLM_HOST` | `127.0.0.1` | Set `0.0.0.0` to reach it from other devices on your network |
-| `JALLM_PORT` | `5000` | Port |
+| `JALLM_HOST` | `127.0.0.1` | set `0.0.0.0` to reach it from your phone on the same Wi-Fi |
+| `JALLM_PORT` | `5000` | port |
 | `JALLM_DEBUG` | off | `1` enables Flask debug — **never** on an exposed host (RCE risk) |
+| `JALLM_NO_BROWSER` | off | `1` to stop auto-opening the browser on launch |
 
-**Use it from your phone (same Wi-Fi):**
-
-```bash
-JALLM_HOST=0.0.0.0 python app.py
-# then on your phone open  http://<your-computer-ip>:5000
-```
-
-Find your computer's IP with `ip addr` (Linux), `ipconfig` (Windows), or `ifconfig` (macOS).
-Only do this on a network you trust.
+> **Self-host, one user per instance.** The API key and provider choice live on the server, and
+> imports read local files / fetch URLs on the host — so a shared public instance would let
+> visitors spend your key and expose your filesystem. Don't deploy it multi-tenant.
 
 ## Architecture
 
 ```
-app.py            Flask routes; stateless, profile carried per-request
-generator.py      LLM prompts (parameterized by applicant profile) + provider routing
-profile.py        Builds prompt blocks from the user's profile; voice fingerprint
-sources.py        Import background from a local file path or web URL (self-host only)
-cli_auth.py       Connect a subscription CLI: logged-in probe + browser-login launch
-docx_writer.py    Renders the .docx (contact header from the profile)
-providers/        Provider abstraction: API / CLI / Ollama adapters, key storage, detection
-templates/        Single-page, mobile-first UI (localStorage-backed profile)
-config.py         Default CLI model + timeout
-start-mac.command / start-windows.bat   Double-click launchers (venv + run + open browser)
-tests/            Offline smoke tests (mock provider; no network)
+app.py          Flask routes; stateless, profile carried per request
+generator.py    LLM prompts + provider routing
+profile.py      Prompt blocks + voice fingerprint from the user's profile
+sources.py      File-upload / path / URL import + org-site crawl (self-host only)
+providers/      API / CLI / Ollama adapters, key storage, detection
+cli_auth.py     CLI login probe + browser-login launch
+docx_writer.py  .docx rendering (contact header from the profile)
+templates/      Single-page, mobile-first UI
+config.py       Default CLI model + subprocess timeout
+tests/          Offline smoke tests (mock provider, no network)
 ```
 
 ## Tests
 
 ```bash
-source venv/bin/activate
-pip install pytest
-python -m pytest tests/ -v
+source venv/bin/activate && pip install pytest
+python -m pytest tests/ -v   # offline — the LLM call is mocked
 ```
-
-The smoke tests mock the LLM call, so they run offline and make no API requests.
-
-## Privacy
-
-- Your profile lives in your browser's `localStorage`; "Clear" removes it.
-- API keys are stored locally with `0600` permissions and are never logged or exported.
-- The server stores no resumes, letters, or job postings.
-- Imported files/links are read on your own machine (self-host model) and only their
-  extracted text is added to your profile — nothing is uploaded anywhere except to the LLM
-  provider you chose, at generation time.
 
 ## License
 
