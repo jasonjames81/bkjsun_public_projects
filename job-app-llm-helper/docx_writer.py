@@ -27,11 +27,17 @@ _COVER_LETTER_SECTION_RE = re.compile(
 
 
 def extract_cover_letter_section(structured_output: str) -> str:
-    """Pull the cover-letter section out of the full structured response."""
+    """Pull the cover-letter prose out of the response, dropping any appended sections.
+
+    Legacy multi-section output carried a "## 1. TAILORED COVER LETTER" header; the
+    current flow emits the letter alone, optionally followed by a "## 4. EMPLOYER
+    APPLICATION QUESTIONS" appendix. Either way, return only the letter — never the
+    appended employer Q&A (it shouldn't land in the .docx).
+    """
     match = _COVER_LETTER_SECTION_RE.search(structured_output)
     if match:
         return match.group(1).strip()
-    return structured_output.strip()
+    return re.split(r"\n##\s", structured_output, maxsplit=1)[0].strip()
 
 
 def _split_letter_parts(letter_text: str) -> tuple[str, list[str]]:

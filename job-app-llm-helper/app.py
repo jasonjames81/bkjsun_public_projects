@@ -24,6 +24,7 @@ from generator import (
     extract_contact_fields,
     extract_job_fields,
     generate_clarifying_questions,
+    generate_coaching,
     generate_cover_letter,
     generate_questions,
     refine_letter,
@@ -325,6 +326,25 @@ def generate():
             additional_notes=additional_notes,
             experience_answers=experience_answers or None,
             application_answers=application_answers or None,
+        )
+    )
+
+
+@app.route("/coaching", methods=["POST"])
+def coaching():
+    data = request.json or {}
+    job_title, org_name, job_description, org_about = _job_fields(data)
+    experience_answers = data.get("experience_answers", [])
+    if not job_title or not org_name or not job_description:
+        return _missing_job()
+    return jsonify(
+        generate_coaching(
+            _profile_from(data),
+            job_title=job_title,
+            org_name=org_name,
+            job_description=job_description,
+            org_about=org_about,
+            experience_answers=experience_answers or None,
         )
     )
 

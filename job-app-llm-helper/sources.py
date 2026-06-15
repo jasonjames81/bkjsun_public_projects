@@ -145,6 +145,14 @@ def _parse_file(p: Path) -> str:
 
 
 def load_url(url: str) -> str:
+    host = urlparse(url).netloc.lower()
+    if "linkedin.com" in host:
+        # LinkedIn returns HTTP 999 to any non-logged-in fetch — there's no public
+        # extraction path. Point the user at the reliable workaround instead.
+        raise SourceError(
+            "LinkedIn blocks automated fetching. Open your profile, click "
+            "“More → Save to PDF”, then upload that PDF here instead."
+        )
     req = urllib.request.Request(
         url, headers={"User-Agent": "Mozilla/5.0 (job-app-llm-helper)"}
     )
@@ -210,6 +218,12 @@ def crawl_site(url: str) -> str:
     return "\n\n".join(sections)
 
 
+# A bare reference with no scheme that still looks like a host ("linkedin.com/in/me",
+# "www.example.org/about") — so we can auto-prepend https:// instead of treating it as
+# a local file path and failing with "file not found".
+_BARE_URL_RE = re.compile(r"^(?:www\.)?[\w-]+(?:\.[\w-]+)+(?:[/?#].*)?$")
+
+
 def load_source(ref: str) -> dict:
     """Load text from a file path or URL. Returns {"kind", "text"}; raises SourceError."""
     ref = (ref or "").strip()
@@ -220,6 +234,9 @@ def load_source(ref: str) -> dict:
         kind, text = "url", load_url(ref)
     elif scheme in ("file",):
         kind, text = "file", load_path(urlparse(ref).path)
+    elif not Path(ref).expanduser().exists() and _BARE_URL_RE.match(ref):
+        # No scheme, no such file, but shaped like a domain — treat as a web link.
+        kind, text = "url", load_url(f"https://{ref}")
     else:
         kind, text = "file", load_path(ref)
     text = (text or "").strip()

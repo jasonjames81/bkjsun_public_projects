@@ -89,6 +89,67 @@ def test_generate_route_threads_profile(client, monkeypatch):
     assert "Jason" not in captured["prompt"]
 
 
+def test_coaching_route_threads_profile(client, monkeypatch):
+    captured = {}
+    canned = (
+        "## 1. RÉSUMÉ TAILORING SUGGESTIONS\n- emphasize algorithm design\n\n"
+        "## 2. INTERVIEW PREPARATION\nMatch score: 90\n- Talking point: Note G.\n"
+    )
+
+    def fake(prompt, **kw):
+        captured["prompt"] = prompt
+        return canned
+
+    monkeypatch.setattr(generator, "call_llm", fake)
+    res = client.post(
+        "/coaching",
+        json={
+            **JOB,
+            "profile": SAMPLE_PROFILE,
+            "experience_answers": [{"question": "Hardest?", "answer": "Note G."}],
+        },
+    )
+    body = res.get_json()
+    assert body["success"], body
+    assert "INTERVIEW PREPARATION" in body["content"]
+    assert "Ada Lovelace" in captured["prompt"] and "Jason" not in captured["prompt"]
+    assert "Note G." in captured["prompt"]  # experience answer threaded
+
+
+def test_generate_cover_letter_excludes_coaching_sections(client, monkeypatch):
+    """The cover-letter route returns the letter alone (no résumé/interview sections)."""
+    monkeypatch.setattr(
+        generator,
+        "call_llm",
+        lambda prompt, **kw: "Dear Hiring Manager,\n\nBody about machines.\n\nSincerely,\nAda",
+    )
+    res = client.post("/generate", json={**JOB, "profile": SAMPLE_PROFILE})
+    body = res.get_json()
+    assert body["success"], body
+    assert "RESUME TAILORING" not in body["content"].upper()
+    assert "INTERVIEW" not in body["content"].upper()
+
+
+def test_generate_appends_employer_qa(client, monkeypatch):
+    """Drafted employer answers are appended verbatim as a section after the letter."""
+    monkeypatch.setattr(
+        generator,
+        "call_llm",
+        lambda prompt, **kw: "Dear Hiring Manager,\n\nBody.\n\nSincerely,\nAda",
+    )
+    res = client.post(
+        "/generate",
+        json={
+            **JOB,
+            "profile": SAMPLE_PROFILE,
+            "application_answers": [{"question": "Why us?", "answer": "The machines."}],
+        },
+    )
+    content = res.get_json()["content"]
+    assert "EMPLOYER APPLICATION QUESTIONS" in content
+    assert "Why us?" in content and "The machines." in content
+
+
 def test_analyze_fit_route(client, monkeypatch):
     monkeypatch.setattr(
         generator,
