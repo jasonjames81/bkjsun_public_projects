@@ -154,10 +154,10 @@
 
     <button type="button" id="importResumeBtn" class="bigimport">
       <span class="ico">📄</span>
-      <span class="lab">Import resume or CV — from file, link, or LinkedIn
+      <span class="lab">Upload resume or CV — from file, link, or LinkedIn
         <span class="sub">We'll fill in your name, contact, and background automatically</span></span>
     </button>
-    <p class="hint" id="resumeCount" style="margin:4px 0 0">Import up to 2 — e.g. your resume and your LinkedIn.</p>
+    <p class="hint" id="resumeCount" style="margin:4px 0 0">Upload up to 2 — e.g. your resume and your LinkedIn.</p>
     <div class="status" id="sourceStatus"></div>
 
     <div class="row">
@@ -172,16 +172,16 @@
 
     <details class="collapse" id="backgroundBox" open>
       <summary id="backgroundSummary">Background — paste your resume, experience, or LinkedIn text</summary>
-      <textarea id="background" style="min-height:160px; margin-top:8px" placeholder="Paste your resume / work history here, or use Import above. The more detail, the better the letter."></textarea>
+      <textarea id="background" style="min-height:160px; margin-top:8px" placeholder="Paste your resume / work history here, or use Upload above. The more detail, the better the letter."></textarea>
     </details>
 
     <label>Writing samples <span class="opt">(optional) — prose the AI should match in voice</span></label>
     <button type="button" id="importSamplesBtn" class="bigimport" style="margin-bottom:8px">
       <span class="ico">✍️</span>
-      <span class="lab">Import writing samples — from file or link
+      <span class="lab">Upload writing samples — from file or link
         <span class="sub">A past cover letter, essay, or anything in your voice</span></span>
     </button>
-    <p class="hint" id="samplesCount" style="margin:0 0 4px">Import up to 4 samples.</p>
+    <p class="hint" id="samplesCount" style="margin:0 0 4px">Upload up to 4 samples.</p>
     <div class="status" id="samplesStatus"></div>
     <textarea id="writingSamples" placeholder="…or paste here. Separate multiple samples with a blank line."></textarea>
 
@@ -197,7 +197,7 @@
     <h2>The job</h2>
     <button type="button" id="importJobBtn" class="bigimport">
       <span class="ico">💼</span>
-      <span class="lab">Import job posting — from file or link
+      <span class="lab">Upload job posting — from file or link
         <span class="sub">We'll split out the title, organization, and description</span></span>
     </button>
     <div class="status" id="jobImportStatus"></div>
@@ -210,11 +210,11 @@
     <label for="orgAbout">About the organization <span class="opt">(optional)</span></label>
     <button type="button" id="importOrgBtn" class="bigimport" style="margin-bottom:8px">
       <span class="ico">🌐</span>
-      <span class="lab">Import org website — mission, about, recent news
+      <span class="lab">Fetch org website — mission, about, recent news
         <span class="sub">Paste their homepage link; we crawl about/mission/news/blog and summarize</span></span>
     </button>
     <div class="status" id="orgImportStatus"></div>
-    <textarea id="orgAbout" placeholder="Mission / values, if not already in the description — or use Import above."></textarea>
+    <textarea id="orgAbout" placeholder="Mission / values, if not already in the description — or use Upload above."></textarea>
     <div class="btns">
       <button type="button" id="fitBtn" class="ghost">Check fit</button>
     </div>
@@ -224,8 +224,16 @@
   <!-- STEP: EXPERIENCES (optional) -->
   <div class="card">
     <h2>Recall your experiences <span class="opt">(optional)</span></h2>
-    <p class="hint">Get questions tailored to this role, answer the ones you can, and the letter will draw on your answers.</p>
-    <div class="btns"><button type="button" id="getQuestionsBtn" class="ghost">Get tailored questions</button></div>
+    <p class="hint">Get questions tailored to this role, answer the ones you can, and the letter will draw on your answers. Or upload a story/STAR databank you already keep.</p>
+    <div class="btns">
+      <button type="button" id="getQuestionsBtn" class="ghost">Get tailored questions</button>
+      <button type="button" id="importStoriesBtn" class="ghost">Upload stories databank or document</button>
+    </div>
+    <div class="status" id="storiesStatus"></div>
+    <details class="collapse" id="storiesBox">
+      <summary id="storiesSummary">Story notes <span class="opt">— STAR stories / accomplishments (click to view/edit)</span></summary>
+      <textarea id="stories" style="min-height:120px; margin-top:8px" placeholder="Concrete accomplishments — situation, task, action, result. Paste here, or upload above. The letter and any drafted answers will draw on these without inventing details."></textarea>
+    </details>
     <div id="experienceQs"></div>
     <div id="experienceErr" class="err"></div>
   </div>
@@ -248,23 +256,20 @@ Describe a time you led under pressure. (200 words)"></textarea>
   <!-- GENERATE -->
   <div class="card">
     <h2>Generate</h2>
-    <p class="hint">Uses your profile, the job, and anything you added above.</p>
-    <div class="btns"><button type="button" id="generateBtn">Generate cover letter</button></div>
+    <p class="hint">The cover letter folds in any employer-question answers you drafted above. Résumé &amp; interview tips are a separate, no-commitment pass.</p>
+    <div class="btns">
+      <button type="button" id="generateBtn">Generate cover letter</button>
+      <button type="button" id="coachingBtn" class="ghost">Generate résumé &amp; interview tips</button>
+    </div>
   </div>
 
-  <!-- RESULT -->
+  <!-- RESULT: COVER LETTER -->
   <div class="card" id="resultCard" style="display:none">
-    <h2>Result</h2>
+    <h2>Cover letter</h2>
     <div id="resultOut" class="out"></div>
     <label for="refineInput" style="margin-top:14px">Refine</label>
-    <div class="chips" id="refineChips">
-      <button type="button" class="chip" data-refine="Make it tighter and shorter.">Tighter</button>
-      <button type="button" class="chip" data-refine="Make the tone warmer.">Warmer</button>
-      <button type="button" class="chip" data-refine="Make it more confident.">More confident</button>
-      <button type="button" class="chip" data-refine="Try a different opening paragraph.">Different opening</button>
-    </div>
     <div class="row" style="margin-top:8px">
-      <div style="flex:3 1 200px"><input id="refineInput" placeholder="Or type your own instruction"></div>
+      <div style="flex:3 1 200px"><input id="refineInput" placeholder="Enter instructions to refine the cover letter or other output"></div>
       <div style="flex:1 1 90px"><button type="button" id="refineBtn" class="ghost">Refine</button></div>
     </div>
     <div class="btns">
@@ -272,12 +277,22 @@ Describe a time you led under pressure. (200 words)"></textarea>
     </div>
     <div id="resultErr" class="err"></div>
   </div>
+
+  <!-- RESULT: RÉSUMÉ & INTERVIEW TIPS -->
+  <div class="card" id="coachingCard" style="display:none">
+    <h2>Résumé &amp; interview tips</h2>
+    <div id="coachingOut" class="out"></div>
+    <div class="btns">
+      <button type="button" id="copyCoachingBtn" class="ghost">Copy</button>
+    </div>
+    <div id="coachingErr" class="err"></div>
+  </div>
 </div>
 
 <!-- IMPORT MODAL (shared by resume / writing samples / job) -->
 <div class="modal-overlay" id="importModal" style="display:none">
   <div class="modal" role="dialog" aria-modal="true">
-    <h3 id="importTitle">Import</h3>
+    <h3 id="importTitle">Upload</h3>
     <p class="hint" id="importHint">Browse your computer, or paste a link.</p>
     <div class="drop" id="importDrop">
       <strong>Browse your computer</strong><br>
@@ -287,7 +302,7 @@ Describe a time you led under pressure. (200 words)"></textarea>
     <div class="or">or paste a link</div>
     <div class="row">
       <div style="flex:3 1 200px"><input id="importLink" placeholder="https://… (published Google Doc, personal site, LinkedIn public profile)"></div>
-      <div style="flex:1 1 90px"><button type="button" id="importLinkBtn" class="ghost">Import</button></div>
+      <div style="flex:1 1 90px"><button type="button" id="importLinkBtn" class="ghost">Upload</button></div>
     </div>
     <div class="modal-status" id="importStatus"></div>
     <div class="btns"><button type="button" id="importCancelBtn" class="modal-close">Cancel</button></div>
@@ -326,7 +341,7 @@ function busy(btn, on, label) {
 // ---- profile (localStorage) ------------------------------------------------
 const PROFILE_KEY = "cla_profile_v1";
 const PROFILE_FIELDS = ["applicantName", "cityState", "phone", "email", "linkedin",
-  "background", "writingSamples"];
+  "background", "writingSamples", "stories"];
 
 function readProfileForm() {
   return {
@@ -340,6 +355,7 @@ function readProfileForm() {
     },
     background: $("background").value.trim(),
     writing_samples: $("writingSamples").value.trim(),
+    stories: $("stories").value.trim(),
   };
 }
 function saveProfile() {
@@ -367,6 +383,7 @@ $("clearProfileBtn").addEventListener("click", () => {
   renderCounts();
   $("sourceStatus").innerHTML = "";
   $("samplesStatus").innerHTML = "";
+  $("storiesStatus").innerHTML = "";
   $("backgroundBox").open = true;
   $("backgroundSummary").textContent = "Background — paste your resume, experience, or LinkedIn text";
 });
@@ -386,12 +403,12 @@ PROFILE_FIELDS.forEach((f) =>
 // call (used by the org crawl), returning {ok, text, error, chars, fallback}.
 let importOnText = null;
 let importFetchLink = null;
-let importLinkBusy = "Importing…";
-function openImport({ title, hint, onText, linkOnly = false, fetchLink = null, linkBusy = "Importing…" }) {
+let importLinkBusy = "Uploading…";
+function openImport({ title, hint, onText, linkOnly = false, fetchLink = null, linkBusy = "Uploading…" }) {
   importOnText = onText;
   importFetchLink = fetchLink;
   importLinkBusy = linkBusy;
-  $("importTitle").textContent = title || "Import";
+  $("importTitle").textContent = title || "Upload";
   $("importHint").textContent = hint || "Browse your computer, or paste a link.";
   $("importStatus").innerHTML = "";
   $("importLink").value = "";
@@ -448,7 +465,7 @@ $("importLinkBtn").addEventListener("click", async () => {
   let res;
   try { res = await fetcher(ref); }
   catch { res = { ok: false, error: "request failed" }; }
-  busy($("importLinkBtn"), false, "Import");
+  busy($("importLinkBtn"), false, "Upload");
   if (!res.ok) { importErr(res.error); return; }
   await finishImport(res.text, { source: "link", chars: res.chars, fallback: res.fallback });
 });
@@ -466,12 +483,12 @@ function saveCounts() { localStorage.setItem(COUNT_KEY, JSON.stringify(importCou
 function renderCounts() {
   const r = importCounts.resume, s = importCounts.samples;
   $("resumeCount").textContent = r >= IMPORT_LIMITS.resume
-    ? "2 of 2 imports used — Clear to re-import."
-    : `Import up to 2 — e.g. your resume and your LinkedIn.${r ? ` (${r} of 2 used)` : ""}`;
+    ? "2 of 2 uploads used — Clear to re-upload."
+    : `Upload up to 2 — e.g. your resume and your LinkedIn.${r ? ` (${r} of 2 used)` : ""}`;
   $("importResumeBtn").disabled = r >= IMPORT_LIMITS.resume;
   $("samplesCount").textContent = s >= IMPORT_LIMITS.samples
-    ? "4 of 4 samples imported — Clear to re-import."
-    : `Import up to 4 samples.${s ? ` (${s} of 4 used)` : ""}`;
+    ? "4 of 4 samples uploaded — Clear to re-upload."
+    : `Upload up to 4 samples.${s ? ` (${s} of 4 used)` : ""}`;
   $("importSamplesBtn").disabled = s >= IMPORT_LIMITS.samples;
 }
 
@@ -479,14 +496,14 @@ function renderCounts() {
 $("importResumeBtn").addEventListener("click", () => {
   if (importCounts.resume >= IMPORT_LIMITS.resume) return;
   openImport({
-    title: "Import resume or CV",
+    title: "Upload resume or CV",
     hint: "From a file on your computer, or a link to a published Google Doc / personal site / public LinkedIn.",
     onText: async (text, meta) => {
       const bg = $("background");
       const sep = bg.value.trim() ? "\n\n--- imported ---\n\n" : "";
       bg.value = bg.value.trim() + sep + text;
       importCounts.resume++; saveCounts(); renderCounts();
-      $("sourceStatus").innerHTML = `<span class="saved">Imported ${Number(meta.chars || text.length).toLocaleString()} chars ✓ — filling in your details…</span>`;
+      $("sourceStatus").innerHTML = `<span class="saved">Uploaded ${Number(meta.chars || text.length).toLocaleString()} chars ✓ — filling in your details…</span>`;
       $("backgroundBox").open = false;  // minimize the paste box now it's populated
       $("backgroundSummary").innerHTML = 'Background <span class="opt">— imported, click to view/edit</span>';
       saveProfile();
@@ -508,15 +525,15 @@ async function autofillContact(text) {
   saveProfile();
   const got = ["name", "city_state", "phone", "email", "linkedin"].filter((k) => f[k]).length;
   $("sourceStatus").innerHTML = got
-    ? `<span class="saved">Imported ✓ — filled ${got} contact field${got > 1 ? "s" : ""} from your resume.</span>`
-    : `<span class="saved">Imported ✓ — couldn't auto-detect contact details; add them above if you'd like.</span>`;
+    ? `<span class="saved">Uploaded ✓ — filled ${got} contact field${got > 1 ? "s" : ""} from your resume.</span>`
+    : `<span class="saved">Uploaded ✓ — couldn't auto-detect contact details; add them above if you'd like.</span>`;
 }
 
 // ---- writing-samples import (up to 4) --------------------------------------
 $("importSamplesBtn").addEventListener("click", () => {
   if (importCounts.samples >= IMPORT_LIMITS.samples) return;
   openImport({
-    title: "Import writing samples",
+    title: "Upload writing samples",
     hint: "A past cover letter, essay, or anything in your voice — from a file or a link.",
     onText: async (text, meta) => {
       const ta = $("writingSamples");
@@ -524,17 +541,31 @@ $("importSamplesBtn").addEventListener("click", () => {
       ta.value = ta.value.trim() + sep + text;
       importCounts.samples++; saveCounts(); renderCounts();
       saveProfile();
-      $("samplesStatus").innerHTML = `<span class="saved">Imported ${Number(meta.chars || text.length).toLocaleString()} chars into writing samples ✓ (${importCounts.samples} of 4)</span>`;
+      $("samplesStatus").innerHTML = `<span class="saved">Uploaded ${Number(meta.chars || text.length).toLocaleString()} chars into writing samples ✓ (${importCounts.samples} of 4)</span>`;
     },
   });
 });
 
+// ---- stories databank import → fill the Story notes field ------------------
+$("importStoriesBtn").addEventListener("click", () => openImport({
+  title: "Upload stories databank",
+  hint: "A STAR-story doc, accomplishment notes, or brag sheet — from a file or a link.",
+  onText: async (text, meta) => {
+    const ta = $("stories");
+    const sep = ta.value.trim() ? "\n\n" : "";
+    ta.value = ta.value.trim() + sep + text;
+    $("storiesBox").open = true;
+    saveProfile();
+    $("storiesStatus").innerHTML = `<span class="saved">Uploaded ${Number(meta.chars || text.length).toLocaleString()} chars into your story notes ✓</span>`;
+  },
+}));
+
 // ---- job-posting import → split into fields --------------------------------
 $("importJobBtn").addEventListener("click", () => openImport({
-  title: "Import job posting",
+  title: "Upload job posting",
   hint: "From a file, or a link to the posting. We'll split out the title, organization, and description.",
   onText: async (text) => {
-    $("jobImportStatus").innerHTML = '<span class="spinner" style="border-color:var(--accent);border-top-color:transparent"></span> Reading the posting…';
+    $("jobImportStatus").innerHTML = '<span class="spinner" style="border-color:var(--accent);border-top-color:transparent"></span> AI is parsing the posting — this can take a moment…';
     let res;
     try { res = await postJSON("/extract-job", { text }); }
     catch { res = { ok: false }; }
@@ -545,25 +576,25 @@ $("importJobBtn").addEventListener("click", () => openImport({
     if (f.job_description) $("jobDescription").value = f.job_description;
     setIfEmpty("orgAbout", f.org_about);
     $("jobImportStatus").innerHTML = res && res.fallback
-      ? `<span class="saved">Imported ✓ — couldn't auto-split; full text is in Job description. Fill in title & organization above.</span>`
-      : `<span class="saved">Imported ✓ — title, organization, and description filled in.</span>`;
+      ? `<span class="saved">Uploaded ✓ — couldn't auto-split; full text is in Job description. Fill in title & organization above.</span>`
+      : `<span class="saved">Uploaded ✓ — title, organization, and description filled in.</span>`;
   },
 }));
 
 // ---- org-website import → crawl + summarize into "About the org" -----------
 $("importOrgBtn").addEventListener("click", () => openImport({
-  title: "Import org website",
+  title: "Fetch org website",
   hint: "Paste the organization's homepage or About link — we crawl about/mission/news/blog and summarize. (Recent-post coverage depends on what the site exposes; dates aren't guaranteed.)",
   linkOnly: true,
-  linkBusy: "Crawling…",
+  linkBusy: "Crawling & AI-summarizing the site…",
   fetchLink: (url) => postJSON("/import-org", { url }),
   onText: async (text, meta) => {
     const ta = $("orgAbout");
     const sep = ta.value.trim() ? "\n\n" : "";
     ta.value = ta.value.trim() + sep + text;
     $("orgImportStatus").innerHTML = meta.fallback
-      ? `<span class="saved">Imported ✓ — added the raw site text (no provider configured to summarize). Trim as needed.</span>`
-      : `<span class="saved">Imported ✓ — mission and recent activity summarized into “About the organization”.</span>`;
+      ? `<span class="saved">Fetched ✓ — added the raw site text (no provider configured to summarize). Trim as needed.</span>`
+      : `<span class="saved">Fetched ✓ — mission and recent activity summarized into “About the organization”.</span>`;
   },
 }));
 
@@ -932,6 +963,27 @@ $("generateBtn").addEventListener("click", async () => {
   }
   showResult(res.content);
 });
+$("coachingBtn").addEventListener("click", async () => {
+  if (!requireInputs()) return;
+  busy($("coachingBtn"), true, "Working…");
+  const res = await postJSON("/coaching", {
+    ...jobContext(), profile: currentProfile(),
+    experience_answers: collectExperienceAnswers(),
+  });
+  busy($("coachingBtn"), false, "Generate résumé & interview tips");
+  $("coachingCard").style.display = "";
+  if (!res.success) {
+    $("coachingOut").textContent = "";
+    $("coachingErr").textContent = res.error || "Generation failed.";
+    return;
+  }
+  $("coachingErr").textContent = "";
+  $("coachingOut").textContent = res.content || "";
+  $("coachingCard").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+$("copyCoachingBtn").addEventListener("click", () =>
+  navigator.clipboard && navigator.clipboard.writeText($("coachingOut").textContent)
+);
 function showResult(content) {
   lastContent = content || "";
   $("resultCard").style.display = "";
@@ -952,10 +1004,6 @@ async function doRefine(instruction) {
   showResult(res.letter);
 }
 $("refineBtn").addEventListener("click", () => doRefine($("refineInput").value.trim()));
-$("refineChips").addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-refine]");
-  if (btn) doRefine(btn.dataset.refine);
-});
 $("downloadBtn").addEventListener("click", async () => {
   if (!lastContent) return;
   busy($("downloadBtn"), true, "Building…");
@@ -987,6 +1035,7 @@ if ($("background").value.trim()) {
   $("backgroundBox").open = false;
   $("backgroundSummary").innerHTML = 'Background <span class="opt">— saved, click to view/edit</span>';
 }
+if ($("stories").value.trim()) { $("storiesBox").open = true; }
 loadProviders();
 </script>
 </body>

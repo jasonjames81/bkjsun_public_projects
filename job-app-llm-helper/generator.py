@@ -496,23 +496,15 @@ Respond with ONLY a JSON array of 4-5 question strings, no other text:
         return {"success": False, "error": str(e)}
 
 
-_COVER_LETTER_SPLIT = re.compile(
-    r"(##\s*1\.\s*TAILORED COVER LETTER\s*\n)(.*?)(\n##\s*2\.)",
-    re.DOTALL | re.IGNORECASE,
-)
+def polish_cover_letter(draft: str, profile: dict) -> str:
+    """Second pass: scrub AI tells and tighten voice across the whole cover letter.
 
-
-def polish_cover_letter_section(draft: str, profile: dict) -> str:
-    """Second pass: scrub AI tells and tighten voice on the cover-letter section only."""
-    match = _COVER_LETTER_SPLIT.search(draft)
-    if not match:
+    The cover letter is now generated on its own (no résumé/fit sections appended), so
+    the polish pass operates on the entire draft rather than a sliced-out section.
+    """
+    draft = (draft or "").strip()
+    if not draft:
         return draft
-
-    header, cover_letter, tail_marker = (
-        match.group(1),
-        match.group(2).strip(),
-        match.group(3),
-    )
     voice_block = profile_mod.build_voice_fingerprint(profile)
 
     polish_prompt = f"""You are revising a draft cover letter to remove AI tells and tighten the
@@ -523,7 +515,7 @@ voice match. Here is the writer's voice fingerprint:
 Here is the draft cover letter to revise:
 
 ---DRAFT---
-{cover_letter}
+{draft}
 ---END DRAFT---
 
 Your task: rewrite the cover letter to fix any of the following, while preserving substance,
@@ -539,12 +531,10 @@ Constraints:
 - Output ONLY the revised cover letter — no preamble, no explanation, no markdown fences, no after-notes."""
 
     polished = call_llm(polish_prompt).strip()
-    if not polished:
-        return draft
-    return f"{draft[: match.start()]}{header}{polished}\n{tail_marker}{draft[match.end() :]}"
+    return polished or draft
 
 
-def _build_generation_prompt(
+def _build_cover_letter_prompt(
     profile: dict,
     job_title: str,
     org_name: str,
@@ -574,9 +564,8 @@ def _build_generation_prompt(
         for qa in application_answers:
             application_answers_section += f"\nQ: {qa['question']}\nA: {qa['answer']}\n"
 
-    return f"""You are helping {name} write a tailored cover letter and prepare an application
-package for a specific job. Match {name}'s voice precisely and rely only on facts present in the
-inputs below.
+    return f"""You are helping {name} write a tailored cover letter for a specific job. Match
+{name}'s voice precisely and rely only on facts present in the inputs below.
 
 {voice_block}
 
@@ -602,11 +591,8 @@ Additional Notes from the applicant:
 
 === YOUR TASK ===
 
-Generate three sections, in this order, with the headers exactly as shown:
-
-## 1. TAILORED COVER LETTER
-
-Write a complete cover letter for {name} applying to this position.
+Write a complete, tailored cover letter for {name} applying to this position. Output ONLY the
+cover letter — no section headers, no preamble, no explanation, no markdown fences, no after-notes.
 
 - DO NOT simply repeat or rephrase content from the resume
 - USE the specific stories and answers shared above; add details and context not already in the resume
@@ -614,25 +600,90 @@ Write a complete cover letter for {name} applying to this position.
 - Keep it to one page (about 4 paragraphs of substantive prose)
 - Use today's date
 - Address to "Dear Hiring Manager" unless a name is known
-- Close with the applicant's standard pattern (see voice fingerprint)
+- Close with the applicant's standard pattern (see voice fingerprint)"""
 
-## 2. RESUME TAILORING SUGGESTIONS
+
+def _build_coaching_prompt(
+    profile: dict,
+    job_title: str,
+    org_name: str,
+    job_description: str,
+    org_about: str,
+    experience_answers,
+) -> str:
+    name = profile_mod.applicant_name(profile)
+    profile_block = profile_mod.build_profile_summary(profile)
+    stories_block = profile_mod.build_stories_block(profile)
+
+    experience_section = ""
+    if experience_answers:
+        experience_section = f"\n=== {name.upper()}'S RELEVANT EXPERIENCES & STORIES FOR THIS ROLE ===\n"
+        for qa in experience_answers:
+            experience_section += f"\nQ: {qa['question']}\nA: {qa['answer']}\n"
+
+    return f"""You are coaching {name} on how to position themselves for a specific job. Base every
+suggestion only on the materials below — never invent experience the applicant doesn't show.
+
+{profile_block}
+
+{stories_block}
+{experience_section}
+
+=== TARGET JOB ===
+Job Title: {job_title}
+Organization: {org_name}
+
+Job Description:
+{job_description}
+
+About the Organization:
+{org_about if org_about else "Not provided"}
+
+=== YOUR TASK ===
+
+Produce two sections, in this order, with the headers exactly as shown:
+
+## 1. RÉSUMÉ TAILORING SUGGESTIONS
 
 Based on the job requirements, suggest:
 - Which points from the background to emphasize or move to the top
 - Any bullets that should be reworded to better match job keywords (give the rewrite verbatim)
 - Skills to highlight
-- Any gaps to address in the cover letter
+- Any gaps to address in the application
 
-## 3. JOB FIT ANALYSIS
+## 2. INTERVIEW PREPARATION
 
 Provide:
-- Match score (0-100) with one-sentence explanation
+- Match score (0-100) with a one-sentence explanation
 - Top 3 strengths the applicant brings to this role
-- Top 2-3 potential concerns and concrete reframes
-- 3-4 talking points for an interview
+- Top 2-3 likely concerns the hiring side will raise, each with a concrete reframe
+- 4-5 interview talking points grounded in the applicant's real experience
 
-Format your response with clear headers using ## for main sections and --- for subsections."""
+Format your response with clear headers using ## for main sections and --- for subsections.
+Do not invent numbers, organizations, dates, or stories beyond what the materials show."""
+
+
+def _application_answers_appendix(application_answers: list[dict] | None) -> str:
+    """Render the applicant's already-drafted employer answers as an output section.
+
+    Appended verbatim (not regenerated) so the answers the user reviewed/edited in the
+    "Employer application questions" step travel with the cover letter in one document.
+    """
+    if not application_answers:
+        return ""
+    lines = ["## 4. EMPLOYER APPLICATION QUESTIONS", ""]
+    for qa in application_answers:
+        question = (qa.get("question") or "").strip()
+        answer = (qa.get("answer") or "").strip()
+        if not question and not answer:
+            continue
+        if question:
+            lines.append(f"**{question}**")
+            lines.append("")
+        if answer:
+            lines.append(answer)
+            lines.append("")
+    return "\n".join(lines).strip()
 
 
 def generate_cover_letter(
@@ -646,8 +697,12 @@ def generate_cover_letter(
     application_answers: list[dict] | None = None,
     polish: bool = True,
 ) -> dict:
-    """Generate a tailored cover letter and resume suggestions via the selected provider."""
-    prompt = _build_generation_prompt(
+    """Generate a tailored cover letter (only) via the selected provider.
+
+    Résumé tailoring + interview prep now live in generate_coaching(); this returns the
+    letter alone, with any already-drafted employer answers appended verbatim.
+    """
+    prompt = _build_cover_letter_prompt(
         profile,
         job_title,
         org_name,
@@ -659,7 +714,10 @@ def generate_cover_letter(
     )
     try:
         draft = call_llm(prompt)
-        final = polish_cover_letter_section(draft, profile) if polish else draft
+        final = polish_cover_letter(draft, profile) if polish else draft.strip()
+        appendix = _application_answers_appendix(application_answers)
+        if appendix:
+            final = f"{final.rstrip()}\n\n{appendix}"
         return {
             "success": True,
             "content": final,
@@ -674,3 +732,34 @@ def generate_cover_letter(
             "job_title": job_title,
             "org_name": org_name,
         }
+
+
+def generate_coaching(
+    profile: dict,
+    job_title,
+    org_name,
+    job_description,
+    org_about="",
+    experience_answers=None,
+) -> dict:
+    """Generate résumé-tailoring suggestions + interview prep via the selected provider."""
+    prompt = _build_coaching_prompt(
+        profile,
+        job_title,
+        org_name,
+        job_description,
+        org_about,
+        experience_answers,
+    )
+    try:
+        content = call_llm(prompt).strip()
+        if not content:
+            return {"success": False, "error": "the model returned an empty response"}
+        return {
+            "success": True,
+            "content": content,
+            "job_title": job_title,
+            "org_name": org_name,
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
