@@ -7,6 +7,12 @@ APP_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(APP_DIR))
 
 import handoff  # noqa: E402
+import pytest  # noqa: E402
+
+from providers.base import ProviderError  # noqa: E402
+from providers.config import ProviderConfig  # noqa: E402
+from providers.detect import detect_providers  # noqa: E402
+from providers.registry import get_provider, list_models  # noqa: E402
 
 PROFILE = {
     "applicant_name": "Ada Lovelace",
@@ -91,3 +97,21 @@ def test_caps_bound_oversized_job_and_org():
     assert "J" * 8001 not in out
     assert "O" * 6000 in out
     assert "O" * 6001 not in out
+
+
+
+def test_browser_chat_is_detected_and_available():
+    infos = {i.name: i for i in detect_providers(ProviderConfig())}
+    assert "browser_chat" in infos
+    bc = infos["browser_chat"]
+    assert bc.available is True
+    assert bc.kind == "manual"
+
+
+def test_get_provider_browser_chat_raises():
+    with pytest.raises(ProviderError):
+        get_provider("browser_chat", ProviderConfig())
+
+
+def test_list_models_browser_chat_empty():
+    assert list_models("browser_chat", ProviderConfig()) == []
