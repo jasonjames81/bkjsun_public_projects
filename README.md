@@ -9,7 +9,7 @@ Small, self-contained projects I'm happy to share publicly. Each lives in its ow
 
 ## How these were built
 
-These projects were built with the help of AI coding tools, primarily [Claude Code](https://claude.com/claude-code) (Anthropic). The author reviewed and tested the code and is responsible for it. No secrets, credentials, or personal data are included in this repository — the job-app helper runs on your own LLM access and keeps your data in your browser.
+These projects were built with the help of AI coding tools, primarily [Claude Code](https://claude.com/claude-code) (Anthropic). The author tested the code and is responsible for it. No secrets, credentials, or personal data are included in this repository — the job-app helper runs on your own LLM access and keeps your data in your browser.
 
 ## License
 
