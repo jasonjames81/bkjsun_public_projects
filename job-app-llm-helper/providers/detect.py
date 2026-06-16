@@ -94,17 +94,4 @@ def detect_providers(config: ProviderConfig) -> list[ProviderInfo]:
         )
     )
 
-    infos.append(
-        ProviderInfo(
-            name="browser_chat",
-            display_name="Browser AI (paste prompt — claude.ai, ChatGPT, etc.)",
-            kind="manual",
-            available=True,
-            detail="no key or install needed — you paste into your own chat tab",
-            tier=QualityTier.BEST,
-            model=None,
-            tier_verified=False,
-        )
-    )
-
     return infos

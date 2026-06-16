@@ -54,11 +54,6 @@ def get_provider(name: str | None, config: ProviderConfig) -> Provider:
             model = local[0] if local else None
         return OllamaProvider(model=model)
 
-    if name == "browser_chat":
-        raise ProviderError(
-            "this provider builds a prompt to paste; it doesn't generate in-app"
-        )
-
     raise ProviderError(f"Unknown provider: {name!r}")
 
 
