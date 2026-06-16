@@ -21,6 +21,9 @@ if errorlevel 1 (
   exit /b 1
 )
 
+REM --- Self-update from the latest release (set JALLM_NO_UPDATE=1 to skip) ---
+if exist selfupdate.py python selfupdate.py
+
 REM --- First-run setup ---
 REM Use the venv's python EXPLICITLY everywhere, so pip and the app share one
 REM interpreter (relying on activate + ambient `python` drops deps in the wrong place).

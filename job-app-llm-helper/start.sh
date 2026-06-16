@@ -3,6 +3,13 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Self-update in place from the latest release, then re-exec. Set JALLM_NO_UPDATE=1
+# to skip (offline / pinned). Runs once per launch via the JALLM_UPDATED guard.
+if [ -z "${JALLM_UPDATED:-}" ] && [ -f selfupdate.py ] && command -v python3 >/dev/null 2>&1; then
+  export JALLM_UPDATED=1
+  if python3 selfupdate.py; then exec "$0" "$@"; fi
+fi
+
 # Use the venv's python explicitly so pip and the app share one interpreter.
 VENV_PY="venv/bin/python"
 if [ ! -x "$VENV_PY" ]; then

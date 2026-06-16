@@ -32,6 +32,16 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
+# --- Self-update ------------------------------------------------------------
+# Pull the latest release in place (and clear the macOS quarantine flag) so you
+# never have to re-download or re-approve in System Settings. Runs once per
+# launch; set JALLM_NO_UPDATE=1 to skip. After a successful update we re-exec so
+# the (possibly updated) launcher runs.
+if [ -z "${JALLM_UPDATED:-}" ] && [ -f selfupdate.py ]; then
+  export JALLM_UPDATED=1
+  if python3 selfupdate.py; then exec "$0" "$@"; fi
+fi
+
 # --- First-run setup --------------------------------------------------------
 # Use the venv's python EXPLICITLY everywhere. Relying on `source activate` +
 # ambient `python3` is the classic cause of "deps installed but app can't import
