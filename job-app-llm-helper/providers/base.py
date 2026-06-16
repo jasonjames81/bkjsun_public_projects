@@ -20,7 +20,7 @@ class QualityTier(enum.Enum):
 class ProviderInfo:
     name: str  # stable id, e.g. "anthropic_api"
     display_name: str  # human label, e.g. "Anthropic (API key)"
-    kind: str  # "cli" | "api" | "local" | "manual"
+    kind: str  # "cli" | "api" | "local"
     available: bool
     detail: str  # e.g. "found on PATH — may require login"
     tier: QualityTier

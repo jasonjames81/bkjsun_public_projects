@@ -30,7 +30,6 @@ from generator import (
     refine_letter,
     summarize_org,
 )
-import handoff
 import cli_auth
 from providers.config import ProviderConfig
 from providers.detect import detect_providers
@@ -42,8 +41,6 @@ from sources import SourceError, crawl_site, load_source, load_upload
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 _PHONE_RE = re.compile(r"(?<![\d(])(\+?\(?\d[\d().\-\s]{7,}\d)(?!\d)")
 _LINKEDIN_RE = re.compile(r"(?:https?://)?(?:www\.)?linkedin\.com/in/[^\s)>\]]+", re.I)
-# Splits a pasted writing-samples blob into chunks (same rule as profile.py voice fingerprint).
-_SAMPLE_SPLIT = re.compile(r"\n\s*\n\s*\n+")
 
 
 def _regex_contact(text: str) -> dict:
@@ -307,64 +304,6 @@ def get_questions():
             org_about=org_about,
             prior_qa=prior_qa,
         )
-    )
-
-
-def _split_samples(profile: dict) -> list[str]:
-    """Split the pasted writing_samples blob into chunks (same rule as the voice fingerprint)."""
-    raw = (profile.get("writing_samples") or "").strip()
-    if not raw:
-        return []
-    return [c.strip() for c in _SAMPLE_SPLIT.split(raw) if c.strip()]
-
-
-@app.route("/build-handoff-prompt", methods=["POST"])
-def build_handoff_prompt_route():
-    """Assemble the browser-chat handoff prompt locally — no provider call.
-
-    Looser validation than /generate: a prompt is useful with just a background or
-    just a job posting, so require at least one of the two.
-    """
-    data = request.json or {}
-    job_title, org_name, job_description, _org_about = _job_fields(data)
-    org_url = (data.get("org_url") or "").strip()
-    profile = _profile_from(data)
-    has_background = bool((profile.get("background") or "").strip())
-    if not has_background and not job_description:
-        return jsonify(
-            {
-                "success": False,
-                "error": "Add your background/résumé or the job posting first",
-            }
-        ), 400
-    try:
-        num_samples = int(data.get("num_samples", 3))
-    except (TypeError, ValueError):
-        num_samples = 3
-    try:
-        sample_chars = int(data.get("sample_chars", 2000))
-    except (TypeError, ValueError):
-        sample_chars = 2000
-    num_samples = max(0, min(num_samples, 4))
-    sample_chars = max(200, min(sample_chars, 8000))
-
-    prompt = handoff.build_handoff_prompt(
-        profile,
-        job_title=job_title,
-        org_name=org_name,
-        job_description=job_description,
-        org_url=org_url,
-        samples=_split_samples(profile),
-        sample_chars=sample_chars,
-        num_samples=num_samples,
-    )
-    return jsonify(
-        {
-            "success": True,
-            "prompt": prompt,
-            "chars": len(prompt),
-            "words": len(prompt.split()),
-        }
     )
 
 
