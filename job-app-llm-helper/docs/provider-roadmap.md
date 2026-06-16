@@ -48,7 +48,18 @@ non-agentic generate-only mode. No code change made.
 
 ---
 
-## B. Browser walkthrough package (spec only)
+## B. Browser walkthrough package — IMPLEMENTED (interactive handoff)
+
+**Status (2026-06-15):** Shipped as the `browser_chat` provider. Refined from
+per-step paste round-trips into a single self-contained interactive prompt: the app
+does all deterministic work locally (parsing, regex contact, org crawl, prompt
+assembly, `.docx`) and emits one prompt the user pastes once; the chat then walks
+them through fit → questions → draft → AI-tells rewrite → coaching → refine →
+optional coverage review. Design: `docs/superpowers/specs/2026-06-15-browser-chat-handoff-design.md`.
+Modules: `handoff.py`, `providers/detect.py` (`browser_chat`), `app.py`
+(`/build-handoff-prompt`), `templates/index.html`.
+
+The original per-step "guided manual" sketch below is kept for history.
 
 ### Problem
 

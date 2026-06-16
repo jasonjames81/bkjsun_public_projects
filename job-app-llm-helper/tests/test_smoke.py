@@ -121,7 +121,9 @@ def test_generate_cover_letter_excludes_coaching_sections(client, monkeypatch):
     monkeypatch.setattr(
         generator,
         "call_llm",
-        lambda prompt, **kw: "Dear Hiring Manager,\n\nBody about machines.\n\nSincerely,\nAda",
+        lambda prompt, **kw: (
+            "Dear Hiring Manager,\n\nBody about machines.\n\nSincerely,\nAda"
+        ),
     )
     res = client.post("/generate", json={**JOB, "profile": SAMPLE_PROFILE})
     body = res.get_json()
@@ -369,3 +371,33 @@ def test_cli_login_route_not_installed(client, monkeypatch):
 
     bad = client.post("/providers/cli-login", json={"name": "nope"})
     assert bad.status_code == 400
+
+
+def test_build_handoff_prompt_route(client):
+    resp = client.post(
+        "/build-handoff-prompt",
+        json={
+            "profile": SAMPLE_PROFILE,
+            **JOB,
+            "job_description": "Design numerical methods.",
+            "org_about": "We build engines for the public good.",
+            "num_samples": 3,
+            "sample_chars": 2000,
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["success"] is True
+    assert "Research Engineer" in body["prompt"]
+    assert "Design numerical methods" in body["prompt"]
+    assert body["chars"] == len(body["prompt"])
+    assert body["words"] > 0
+
+
+def test_build_handoff_prompt_requires_some_input(client):
+    resp = client.post(
+        "/build-handoff-prompt",
+        json={"profile": {}, "job_description": ""},
+    )
+    assert resp.status_code == 400
+    assert resp.get_json()["success"] is False
