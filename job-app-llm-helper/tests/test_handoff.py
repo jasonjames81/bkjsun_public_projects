@@ -28,7 +28,7 @@ def _build(**overrides):
         job_title="Research Engineer",
         org_name="Analytical Engines Ltd",
         job_description="Build numerical methods for the Analytical Engine.",
-        org_about="We advance mechanical computation for the public good.",
+        org_url="https://analytical-engines.example",
         samples=[],
         sample_chars=2000,
         num_samples=3,
@@ -42,8 +42,19 @@ def test_prompt_includes_core_materials():
     assert "Research Engineer" in out
     assert "Analytical Engines Ltd" in out
     assert "Build numerical methods" in out
-    assert "advance mechanical computation" in out
     assert "Ada Lovelace" in out
+
+
+def test_org_url_is_handed_off_for_the_chat_to_fetch():
+    out = _build()
+    assert "https://analytical-engines.example" in out
+    # The website text itself is NOT inlined — the chat is told to open the link.
+    assert "research this employer" in out.lower()
+
+
+def test_verbosity_guard_present():
+    out = _build()
+    assert "no preamble" in out.lower()
 
 
 def test_prompt_includes_interactive_steps():
@@ -83,20 +94,16 @@ def test_no_samples_omits_voice_samples_block_without_error():
     assert "--- WRITING SAMPLE" not in out
 
 
-def test_empty_org_emits_ask_user_fallback():
-    out = _build(org_about="")
-    assert "paste" in out.lower()
+def test_no_org_url_emits_ask_user_fallback():
+    out = _build(org_url="")
+    assert "ask me" in out.lower()
+    assert "https://" not in out
 
 
-def test_caps_bound_oversized_job_and_org():
-    out = _build(
-        job_description="J" * 20000,
-        org_about="O" * 20000,
-    )
+def test_caps_bound_oversized_job_description():
+    out = _build(job_description="J" * 20000)
     assert "J" * 8000 in out
     assert "J" * 8001 not in out
-    assert "O" * 6000 in out
-    assert "O" * 6001 not in out
 
 
 def test_browser_chat_is_detected_and_available():
