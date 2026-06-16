@@ -79,6 +79,23 @@ def test_prompt_includes_optional_coverage_review():
     assert "gap" in out.lower()
 
 
+def test_resume_help_offers_tips_or_rewrite_choice():
+    out = _build().lower()
+    assert "résumé help" in out or "resume help" in out
+    assert "(a)" in out and "(b)" in out
+    # (a) = tips on sections, (b) = a rewritten résumé
+    assert "tips" in out
+    assert "revised version" in out
+
+
+def test_interview_prep_is_deferred_not_done_now():
+    out = _build()
+    assert "INTERVIEW PREP" in out
+    low = out.lower()
+    assert "not now" in low or "later" in low
+    assert "scheduled" in low
+
+
 def test_samples_respect_count_and_length():
     samples = ["A" * 5000, "B" * 5000, "C" * 5000, "D" * 5000]
     out = _build(samples=samples, num_samples=2, sample_chars=100)
