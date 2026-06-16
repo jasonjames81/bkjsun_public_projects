@@ -110,6 +110,12 @@
     background: #eef2f8; color: var(--accent); border-radius: 8px;
     padding: 10px 14px; font-size: 0.9rem; font-weight: 600; margin-bottom: 12px;
   }
+  .handoff-intro {
+    background: #eef2f8; border-radius: 8px; padding: 12px 16px; margin-bottom: 14px;
+  }
+  .handoff-intro p { margin: 0 0 8px; font-size: 0.9rem; }
+  .handoff-intro ol.handoff-steps { margin: 0; padding-left: 20px; }
+  .handoff-intro ol.handoff-steps li { font-size: 0.88rem; margin: 4px 0; }
   #handoff-prompt { min-height: 220px; font-family: inherit; font-size: 0.85rem; background: #fbfcfe; }
   #handoff-size { color: var(--muted); font-size: 0.8rem; margin: 4px 0 8px; }
   #handoff-pasteback { margin-top: 14px; }
@@ -225,6 +231,9 @@
     </div>
     <label for="jobDescription">Job description</label>
     <textarea id="jobDescription" style="min-height:140px" placeholder="Paste the full job posting."></textarea>
+    <label for="orgUrl">Organization website <span class="opt">(optional)</span></label>
+    <input id="orgUrl" placeholder="https://example.org">
+    <p class="hint" id="orgUrlHint" style="margin:4px 0 10px; display:none">With <strong>Browser AI</strong>, the chat opens this link itself — no need to fetch it here.</p>
     <label for="orgAbout">About the organization <span class="opt">(optional)</span></label>
     <button type="button" id="importOrgBtn" class="bigimport" style="margin-bottom:8px">
       <span class="ico">🌐</span>
@@ -240,7 +249,7 @@
   </div>
 
   <!-- STEP: EXPERIENCES (optional) -->
-  <div class="card">
+  <div class="card" id="experienceCard">
     <h2>Recall your experiences <span class="opt">(optional)</span></h2>
     <p class="hint">Get questions tailored to this role, answer the ones you can, and the letter will draw on your answers. Or upload a story/STAR databank you already keep.</p>
     <div class="btns">
@@ -257,7 +266,7 @@
   </div>
 
   <!-- STEP: EMPLOYER APPLICATION QUESTIONS (optional) -->
-  <div class="card">
+  <div class="card" id="appQuestionsCard">
     <h2>Employer application questions <span class="opt">(optional)</span></h2>
     <p class="hint">Paste the employer's supplemental questions — one per line. Add an optional limit like <code>(150 words)</code> or <code>(500 chars)</code>. Drafted answers are grounded in your profile and won't be duplicated in the cover letter.</p>
     <textarea id="appQuestionsRaw" style="min-height:110px" placeholder="Why do you want to work here? (150 words)
@@ -282,7 +291,15 @@ Describe a time you led under pressure. (200 words)"></textarea>
 
     <!-- BROWSER-CHAT HANDOFF PANEL (shown only when browser_chat provider selected) -->
     <div id="handoff-panel" style="display:none">
-      <p class="step-hint">1 → open claude.ai or ChatGPT &nbsp;·&nbsp; 2 → paste this prompt &nbsp;·&nbsp; 3 → follow its questions</p>
+      <div class="handoff-intro">
+        <p><strong>How this works:</strong> this builds one prompt you paste into your own AI chat (claude.ai, ChatGPT, Gemini…). The chat then walks you through fit → draft → polish. No API key needed.</p>
+        <ol class="handoff-steps">
+          <li>Fill in your profile and the job above, then click <strong>Build prompt for browser AI</strong>.</li>
+          <li>Click <strong>Copy prompt</strong>, open a <strong>new chat</strong>, and paste it.</li>
+          <li>Answer the chat's questions as it goes — it stops after each step.</li>
+          <li>When you have the final letter, paste it back below to download a .docx.</li>
+        </ol>
+      </div>
       <div class="handoff-controls">
         <label>Writing samples to include:
           <select id="handoff-num-samples">
@@ -641,7 +658,7 @@ $("importOrgBtn").addEventListener("click", () => openImport({
   hint: "Paste the organization's homepage or About link — we crawl about/mission/news/blog and summarize. (Recent-post coverage depends on what the site exposes; dates aren't guaranteed.)",
   linkOnly: true,
   linkBusy: "Crawling & AI-summarizing the site…",
-  fetchLink: (url) => postJSON("/import-org", { url }),
+  fetchLink: (url) => { if (!$("orgUrl").value.trim()) $("orgUrl").value = url.trim(); return postJSON("/import-org", { url }); },
   onText: async (text, meta) => {
     const ta = $("orgAbout");
     const sep = ta.value.trim() ? "\n\n" : "";
@@ -659,6 +676,7 @@ function jobContext() {
     org_name: $("orgName").value.trim(),
     job_description: $("jobDescription").value.trim(),
     org_about: $("orgAbout").value.trim(),
+    org_url: $("orgUrl").value.trim(),
   };
 }
 function requireInputs() {
@@ -1112,6 +1130,9 @@ $("downloadBtn").addEventListener("click", async () => {
 function applyProviderMode(info) {
   const manual = info && info.kind === "manual";
   const btn = $("generateBtn");
+  // Cards/controls that only work with an in-app provider — the browser chat does
+  // these itself, so hide them in manual mode to keep the flow clear.
+  const inAppOnly = ["experienceCard", "appQuestionsCard", "coachingBtn"];
   if (manual) {
     btn.textContent = "Build prompt for browser AI";
     btn.dataset.mode = "handoff";
@@ -1119,10 +1140,15 @@ function applyProviderMode(info) {
     $("keyWrap").style.display = "none";
     $("modelWrap").style.display = "none";
     $("cliWrap").style.display = "none";
+    inAppOnly.forEach((id) => $(id) && ($(id).style.display = "none"));
+    $("orgUrlHint").style.display = "";
+    $("handoff-panel").style.display = "";
   } else {
     btn.textContent = "Generate cover letter";
     delete btn.dataset.mode;
     $("handoff-panel").style.display = "none";
+    inAppOnly.forEach((id) => $(id) && ($(id).style.display = ""));
+    $("orgUrlHint").style.display = "none";
     // Restore key/model/cli visibility via the normal provider-change logic
     // (onProviderChange handles this; we only need to suppress it in manual mode)
   }

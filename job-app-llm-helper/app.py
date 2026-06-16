@@ -326,7 +326,8 @@ def build_handoff_prompt_route():
     just a job posting, so require at least one of the two.
     """
     data = request.json or {}
-    job_title, org_name, job_description, org_about = _job_fields(data)
+    job_title, org_name, job_description, _org_about = _job_fields(data)
+    org_url = (data.get("org_url") or "").strip()
     profile = _profile_from(data)
     has_background = bool((profile.get("background") or "").strip())
     if not has_background and not job_description:
@@ -352,7 +353,7 @@ def build_handoff_prompt_route():
         job_title=job_title,
         org_name=org_name,
         job_description=job_description,
-        org_about=org_about,
+        org_url=org_url,
         samples=_split_samples(profile),
         sample_chars=sample_chars,
         num_samples=num_samples,

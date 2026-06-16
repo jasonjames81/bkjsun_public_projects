@@ -10,10 +10,10 @@ from __future__ import annotations
 
 import profile as profile_mod
 
-# Per-section caps mirror generator.py's snippet cap (text[:6000]); keep the prompt
-# bounded no matter how large the pasted inputs are.
+# Cap the job description so an oversized paste can't blow past the chat's context.
+# The employer's website is NOT inlined — we hand the chat the URL and let it fetch
+# the page itself, so there's no crawled-text cap to apply.
 _JOB_CAP = 8000
-_ORG_CAP = 6000
 
 # AI-tells the chat must catch and rewrite in step 5. Named explicitly so the chat
 # has concrete targets rather than a vague "sound human" instruction.
@@ -28,20 +28,23 @@ _AI_TELLS = [
 ]
 
 _STEPS = """\
-Work through these steps one at a time. After each step, stop and wait for my reply
-before moving to the next:
+Work through these steps in order, one at a time. After each step, stop and wait for
+my reply before the next. Keep every reply tight: no preamble, no recap of my
+materials, no "here is what I'll do" — just do the step. Brief is better.
 
-1. Confirm you understand my background and the role (one short paragraph).
-2. Give a brief fit assessment: where I match the role and where I am light.
-3. Ask me any clarifying questions you need before drafting.
-4. Draft the cover letter (about one page, four paragraphs, plain prose).
-5. AI-TELLS REWRITE: review your own draft for phrasing that reads machine-generated
+1. In 2-3 sentences, give your read of my fit for the role: where I match and where
+   I am light.
+2. Ask only the clarifying questions you actually need before drafting (skip this if
+   you have none).
+3. Research the employer (see EMPLOYER below) and draft the cover letter: about one
+   page, four paragraphs, plain prose.
+4. AI-TELLS REWRITE: review your own draft for phrasing that reads machine-generated
    and rewrite it into plain, specific language. Watch especially for:
 {ai_tells}
-6. Give résumé-tailoring tips and interview-prep talking points grounded only in my
-   real background above.
-7. Refine the letter on my request.
-8. OPTIONAL COVERAGE REVIEW: ask whether I want a final check. If I say yes, list the
+5. Give résumé-tailoring tips and interview-prep talking points grounded only in my
+   real background above — as short bullets, not prose.
+6. Refine the letter on my request.
+7. OPTIONAL COVERAGE REVIEW: ask whether I want a final check. If I say yes, list the
    job posting's key requirements and show how the letter addresses each, flagging any
    gaps."""
 
@@ -49,6 +52,29 @@ before moving to the next:
 def _cap(text: str, limit: int) -> str:
     text = (text or "").strip()
     return text[:limit]
+
+
+def _org_block(org_name: str, org_url: str) -> str:
+    """Tell the chat to research the employer ITSELF rather than inlining crawled text.
+
+    Consumer chats (claude.ai, ChatGPT) can browse, so handing over the URL yields
+    cleaner grounding than pasting disorganized site text — and keeps the prompt short.
+    """
+    org_name = (org_name or "").strip()
+    url = (org_url or "").strip()
+    header = f"=== EMPLOYER: {org_name} ===" if org_name else "=== EMPLOYER ==="
+    if url:
+        return (
+            f"{header}\n"
+            f"Research this employer yourself before drafting: open {url} (and its "
+            "about / mission / news pages) with your web browsing and use what you find "
+            "to ground the letter. If you can't browse, say so and I'll paste the text."
+        )
+    return (
+        f"{header}\n"
+        "Use what you reliably know about this organization; if you need more, ask me "
+        "for their website link or mission text rather than guessing."
+    )
 
 
 def _samples_block(samples: list[str], num_samples: int, sample_chars: int) -> str:
@@ -62,29 +88,12 @@ def _samples_block(samples: list[str], num_samples: int, sample_chars: int) -> s
     return "\n".join(parts)
 
 
-def _org_block(org_name: str, org_about: str) -> str:
-    cleaned = _cap(org_about, _ORG_CAP)
-    if not cleaned:
-        return (
-            f"=== EMPLOYER: {org_name} ===\n"
-            "No website text was captured. Ask me to paste the organization's About / "
-            "mission text, or proceed without it if I prefer."
-        )
-    return (
-        f"=== EMPLOYER: {org_name} ===\n"
-        "Below is raw text crawled from the employer's website. Use it to infer their "
-        "mission, values, and any recent news, and weave relevant points into the "
-        "letter. It is raw — ignore navigation and boilerplate.\n\n"
-        f"{cleaned}"
-    )
-
-
 def build_handoff_prompt(
     profile: dict,
     job_title: str,
     org_name: str,
     job_description: str,
-    org_about: str,
+    org_url: str,
     samples: list[str],
     *,
     sample_chars: int,
@@ -112,5 +121,5 @@ def build_handoff_prompt(
         f"=== TARGET ROLE ===\nJob Title: {job_title}\nOrganization: {org_name}\n\n"
         f"Job Description:\n{_cap(job_description, _JOB_CAP)}"
     )
-    sections.append(_org_block(org_name, org_about))
+    sections.append(_org_block(org_name, org_url))
     return "\n\n".join(s for s in sections if s.strip())
