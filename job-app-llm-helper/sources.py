@@ -67,15 +67,28 @@ def _pdftotext(data: bytes) -> str:
     """Extract text from PDF bytes with pypdf (pure Python — no external binary)."""
     try:
         from pypdf import PdfReader
-        from pypdf.errors import PdfReadError
     except ImportError as e:  # pragma: no cover - dependency is in requirements.txt
         raise SourceError(
             "PDF support needs the `pypdf` package (pip install pypdf)."
         ) from e
     try:
         reader = PdfReader(io.BytesIO(data))
+        if reader.is_encrypted:
+            # An empty-password unlock covers PDFs that are "encrypted" only to
+            # set permissions; a real password can't be recovered here.
+            try:
+                reader.decrypt("")
+            except Exception:  # noqa: BLE001 — fall through to the clear message below
+                pass
+            if reader.is_encrypted:
+                raise SourceError(
+                    "that PDF is password-protected. Remove the password (or print "
+                    "it to a new PDF), then upload again — or paste the text directly."
+                )
         text = "\n".join(page.extract_text() or "" for page in reader.pages)
-    except PdfReadError as e:
+    except SourceError:
+        raise
+    except Exception as e:  # noqa: BLE001 — pypdf raises many error types on bad input
         raise SourceError(f"could not read PDF: {e}") from e
     if not text.strip():
         raise SourceError(

@@ -94,6 +94,18 @@ def test_scanned_pdf_with_no_text_raises():
         sources.load_upload("scan.pdf", empty)
 
 
+def test_password_protected_pdf_raises_clear_error():
+    from pypdf import PdfReader, PdfWriter
+
+    writer = PdfWriter()
+    writer.append(PdfReader(io.BytesIO(_make_pdf("Secret"))))
+    writer.encrypt("hunter2")
+    buf = io.BytesIO()
+    writer.write(buf)
+    with pytest.raises(sources.SourceError, match="password-protected"):
+        sources.load_upload("locked.pdf", buf.getvalue())
+
+
 def test_corrupt_pdf_raises_sourceerror():
     with pytest.raises(sources.SourceError):
         sources.load_upload("broken.pdf", b"%PDF-1.4 not really a pdf")
