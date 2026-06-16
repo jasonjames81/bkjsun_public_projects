@@ -22,7 +22,17 @@ if errorlevel 1 (
 )
 
 REM --- Self-update from the latest release (set JALLM_NO_UPDATE=1 to skip) ---
-if exist selfupdate.py python selfupdate.py
+REM On a successful update, relaunch a fresh window and exit this one — cmd reads a
+REM .bat by byte offset, so we must NOT keep running a file we just overwrote. The
+REM JALLM_UPDATED guard (inherited by the relaunched window) prevents a loop.
+if not defined JALLM_UPDATED if exist selfupdate.py (
+  set JALLM_UPDATED=1
+  python selfupdate.py
+  if not errorlevel 1 (
+    start "" "%~f0"
+    exit /b
+  )
+)
 
 REM --- First-run setup ---
 REM Use the venv's python EXPLICITLY everywhere, so pip and the app share one
