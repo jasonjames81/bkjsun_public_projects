@@ -41,12 +41,18 @@ materials, no "here is what I'll do" — just do the step. Brief is better.
 4. AI-TELLS REWRITE: review your own draft for phrasing that reads machine-generated
    and rewrite it into plain, specific language. Watch especially for:
 {ai_tells}
-5. Give résumé-tailoring tips and interview-prep talking points grounded only in my
-   real background above — as short bullets, not prose.
-6. Refine the letter on my request.
-7. OPTIONAL COVERAGE REVIEW: ask whether I want a final check. If I say yes, list the
+5. Refine the letter on my request.
+6. OPTIONAL COVERAGE REVIEW: ask whether I want a final check. If I say yes, list the
    job posting's key requirements and show how the letter addresses each, flagging any
-   gaps."""
+   gaps.
+7. RÉSUMÉ HELP: first ask which I'd prefer, then do only that:
+   (a) targeted tips to strengthen specific résumé sections for this role, or
+   (b) a revised version of my résumé that applies those tips.
+   Either way, stay grounded in my real background above — never invent experience.
+8. INTERVIEW PREP — LATER, NOT NOW: do not do this yet. Once I actually have an
+   interview scheduled, I will come back to this same chat and ask for it. Just tell
+   me that, and stop. When I ask, give tailored talking points and the questions I am
+   likely to face, grounded in my background and this role."""
 
 
 def _cap(text: str, limit: int) -> str:
