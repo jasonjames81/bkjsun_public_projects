@@ -10,7 +10,8 @@ fetch would become an SSRF vector and local-path loading would read the host's
 filesystem. This feature is intended for the single-user self-host model only.
 
 Supported:
-- Local .docx / .pdf via `pandoc` / `pdftotext` if installed; .txt / .md / .html read directly.
+- Local .docx (python-docx) / .pdf (pypdf), parsed in-process — no external
+  binaries needed; .txt / .md / .html read directly.
 - http(s) URLs: fetched and reduced to readable text. A Google Doc must be
   "Published to the web" (or link-viewable) for its text to come through; private
   docs and most of LinkedIn require login and will not extract.
@@ -19,8 +20,8 @@ Supported:
 from __future__ import annotations
 
 import html as html_mod
+import io
 import re
-import subprocess
 import tempfile
 import urllib.request
 from pathlib import Path
@@ -63,22 +64,54 @@ def _strip_gdocs_boilerplate(text: str) -> str:
 
 
 def _pdftotext(data: bytes) -> str:
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as tmp:
-        tmp.write(data)
-        tmp.flush()
-        try:
-            r = subprocess.run(
-                ["pdftotext", "-layout", tmp.name, "-"],
-                capture_output=True,
-                text=True,
-                timeout=30,
-                check=True,
-            )
-        except FileNotFoundError as e:
-            raise SourceError("PDF support needs `pdftotext` (install poppler).") from e
-        except subprocess.CalledProcessError as e:
-            raise SourceError(f"pdftotext failed: {e.stderr.strip()}") from e
-    return r.stdout
+    """Extract text from PDF bytes with pypdf (pure Python — no external binary)."""
+    try:
+        from pypdf import PdfReader
+        from pypdf.errors import PdfReadError
+    except ImportError as e:  # pragma: no cover - dependency is in requirements.txt
+        raise SourceError(
+            "PDF support needs the `pypdf` package (pip install pypdf)."
+        ) from e
+    try:
+        reader = PdfReader(io.BytesIO(data))
+        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    except PdfReadError as e:
+        raise SourceError(f"could not read PDF: {e}") from e
+    if not text.strip():
+        raise SourceError(
+            "no selectable text found in that PDF — it may be a scan or image. "
+            "Paste the text directly, or use a PDF with real text."
+        )
+    return text
+
+
+def _docx_to_text(p: Path) -> str:
+    """Extract text from a .docx with python-docx (pure Python — no external binary).
+
+    Pulls body paragraphs plus table-cell text, since résumés often lay out contact
+    details and skills in tables.
+    """
+    try:
+        from docx import Document
+        from docx.opc.exceptions import PackageNotFoundError
+    except ImportError as e:  # pragma: no cover - dependency is in requirements.txt
+        raise SourceError(
+            "DOCX support needs the `python-docx` package (pip install python-docx)."
+        ) from e
+    try:
+        doc = Document(str(p))
+    except PackageNotFoundError as e:
+        raise SourceError(
+            "that file is not a valid .docx (old .doc files aren't supported — "
+            "re-save as .docx, or paste the text directly)."
+        ) from e
+    lines = [para.text for para in doc.paragraphs]
+    for table in doc.tables:
+        for row in table.rows:
+            cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+            if cells:
+                lines.append("\t".join(cells))
+    return "\n".join(lines)
 
 
 _SUPPORTED_SUFFIXES = (".docx", ".pdf", ".txt", ".md", ".html", ".htm")
@@ -120,19 +153,7 @@ def _parse_file(p: Path) -> str:
     suffix = p.suffix.lower()
 
     if suffix == ".docx":
-        try:
-            r = subprocess.run(
-                ["pandoc", str(p), "-t", "plain", "--wrap=none"],
-                capture_output=True,
-                text=True,
-                timeout=30,
-                check=True,
-            )
-        except FileNotFoundError as e:
-            raise SourceError("DOCX support needs `pandoc` (install it).") from e
-        except subprocess.CalledProcessError as e:
-            raise SourceError(f"pandoc failed: {e.stderr.strip()}") from e
-        return r.stdout
+        return _docx_to_text(p)
     if suffix == ".pdf":
         return _pdftotext(p.read_bytes())
     if suffix in (".txt", ".md"):
