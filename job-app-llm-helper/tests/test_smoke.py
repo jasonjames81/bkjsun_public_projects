@@ -121,7 +121,9 @@ def test_generate_cover_letter_excludes_coaching_sections(client, monkeypatch):
     monkeypatch.setattr(
         generator,
         "call_llm",
-        lambda prompt, **kw: "Dear Hiring Manager,\n\nBody about machines.\n\nSincerely,\nAda",
+        lambda prompt, **kw: (
+            "Dear Hiring Manager,\n\nBody about machines.\n\nSincerely,\nAda"
+        ),
     )
     res = client.post("/generate", json={**JOB, "profile": SAMPLE_PROFILE})
     body = res.get_json()

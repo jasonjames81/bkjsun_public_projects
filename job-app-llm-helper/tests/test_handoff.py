@@ -99,7 +99,6 @@ def test_caps_bound_oversized_job_and_org():
     assert "O" * 6001 not in out
 
 
-
 def test_browser_chat_is_detected_and_available():
     infos = {i.name: i for i in detect_providers(ProviderConfig())}
     assert "browser_chat" in infos
