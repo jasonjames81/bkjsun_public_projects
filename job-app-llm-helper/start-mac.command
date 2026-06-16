@@ -59,9 +59,7 @@ if ! command -v claude >/dev/null 2>&1; then
 fi
 
 # --- Launch -----------------------------------------------------------------
-# Open the browser a moment after the server starts.
-( sleep 2; open "http://localhost:5000" ) &
-
+# app.py opens the browser itself once it's up (set JALLM_NO_BROWSER=1 to skip).
 echo
 echo "Opening http://localhost:5000 in your browser."
 echo "First time in the app: open “AI provider”, pick one, and paste an API key."

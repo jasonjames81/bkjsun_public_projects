@@ -57,9 +57,7 @@ if errorlevel 1 (
   )
 )
 
-REM Open the browser a moment after the server starts.
-start "" /b cmd /c "timeout /t 2 >nul & start """" http://localhost:5000"
-
+REM app.py opens the browser itself once it's up (set JALLM_NO_BROWSER=1 to skip).
 echo.
 echo Opening http://localhost:5000 in your browser.
 echo First time in the app: open "AI provider", pick one, and paste an API key

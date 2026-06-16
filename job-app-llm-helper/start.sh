@@ -11,6 +11,7 @@ fi
 source venv/bin/activate
 pip install -q -r requirements.txt
 
-# pandoc/pdftotext are optional (only used if you later add file parsing); not required.
+# File parsing (.pdf/.docx) is pure-Python via requirements.txt — no system binaries.
+# app.py opens the browser itself once it's up (set JALLM_NO_BROWSER=1 to skip).
 echo "Open http://localhost:5000 in your browser"
 python app.py
