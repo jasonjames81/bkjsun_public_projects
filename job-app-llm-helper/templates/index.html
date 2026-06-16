@@ -103,6 +103,24 @@
   details.collapse > summary::-webkit-details-marker { display: none; }
   details.collapse > summary::before { content: "▸ "; }
   details.collapse[open] > summary::before { content: "▾ "; }
+
+  /* browser-chat handoff panel */
+  #handoff-panel { margin-top: 10px; }
+  #handoff-panel .step-hint {
+    background: #eef2f8; color: var(--accent); border-radius: 8px;
+    padding: 10px 14px; font-size: 0.9rem; font-weight: 600; margin-bottom: 12px;
+  }
+  #handoff-prompt { min-height: 220px; font-family: inherit; font-size: 0.85rem; background: #fbfcfe; }
+  #handoff-size { color: var(--muted); font-size: 0.8rem; margin: 4px 0 8px; }
+  #handoff-pasteback { margin-top: 14px; }
+  #handoff-pasteback > summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--accent); list-style: none; }
+  #handoff-pasteback > summary::-webkit-details-marker { display: none; }
+  #handoff-pasteback > summary::before { content: "▸ "; }
+  #handoff-pasteback[open] > summary::before { content: "▾ "; }
+  #handoff-letter { min-height: 140px; margin-top: 8px; }
+  .handoff-controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 6px; }
+  .handoff-controls label { margin: 0; font-weight: 600; font-size: 0.85rem; }
+  .handoff-controls select { width: auto; padding: 6px 10px; }
 </style>
 </head>
 <body>
@@ -260,6 +278,42 @@ Describe a time you led under pressure. (200 words)"></textarea>
     <div class="btns">
       <button type="button" id="generateBtn">Generate cover letter</button>
       <button type="button" id="coachingBtn" class="ghost">Generate résumé &amp; interview tips</button>
+    </div>
+
+    <!-- BROWSER-CHAT HANDOFF PANEL (shown only when browser_chat provider selected) -->
+    <div id="handoff-panel" style="display:none">
+      <p class="step-hint">1 → open claude.ai or ChatGPT &nbsp;·&nbsp; 2 → paste this prompt &nbsp;·&nbsp; 3 → follow its questions</p>
+      <div class="handoff-controls">
+        <label>Writing samples to include:
+          <select id="handoff-num-samples">
+            <option value="0">none</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <label>Length each:
+          <select id="handoff-sample-chars">
+            <option value="1500">~½ page</option>
+            <option value="3000" selected>~1 page</option>
+            <option value="6000">~2 pages</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint" id="handoff-tradeoff">3 samples × ~1 page is usually enough. More / longer matches your voice better but makes a longer prompt that uses more of your chat's context limit.</p>
+      <textarea id="handoff-prompt" readonly placeholder="Click "Build prompt for browser AI" to generate the prompt…"></textarea>
+      <p id="handoff-size"></p>
+      <div class="btns" style="margin-top:4px">
+        <button type="button" id="handoff-copy" class="ghost">Copy prompt</button>
+      </div>
+      <details id="handoff-pasteback" class="collapse" style="margin-top:14px">
+        <summary>Got your letter back? Paste it here to download as .docx</summary>
+        <textarea id="handoff-letter" rows="10" placeholder="Paste the cover letter the chat gave you"></textarea>
+        <div class="btns" style="margin-top:8px">
+          <button type="button" id="handoff-download">Download .docx</button>
+        </div>
+        <div id="handoff-err" class="err"></div>
+      </details>
     </div>
   </div>
 
@@ -669,10 +723,20 @@ function updateProviderPill(data, cur) {
 function onProviderChange() {
   const opt = $("providerSelect").selectedOptions[0];
   const kind = opt ? opt.dataset.kind : "";
-  $("keyWrap").style.display = kind === "api" ? "" : "none";
-  $("cliWrap").style.display = kind === "cli" ? "" : "none";
-  loadModels($("providerSelect").value);
-  if (kind === "cli") refreshCliStatus($("providerSelect").value);
+  const name = $("providerSelect").value;
+
+  // Build a minimal info object so applyProviderMode can branch on kind.
+  // applyProviderMode hides key/model/cli rows for manual providers, so only
+  // show them for non-manual kinds.
+  const info = opt ? { kind, name } : null;
+  applyProviderMode(info);
+
+  if (kind !== "manual") {
+    $("keyWrap").style.display = kind === "api" ? "" : "none";
+    $("cliWrap").style.display = kind === "cli" ? "" : "none";
+    loadModels(name);
+    if (kind === "cli") refreshCliStatus(name);
+  }
 }
 
 // ---- subscription CLI: connect via browser login ---------------------------
@@ -946,14 +1010,45 @@ function collectAppAnswers() {
 
 // ---- generate / refine / download ------------------------------------------
 let lastContent = "";
-$("generateBtn").addEventListener("click", async () => {
-  if (!requireInputs()) return;
-  busy($("generateBtn"), true, "Generating…");
-  const res = await postJSON("/generate", {
-    ...jobContext(), profile: currentProfile(),
+
+// Shared: assemble the common intake payload used by /generate and /build-handoff-prompt
+function collectIntakePayload() {
+  return {
+    ...jobContext(),
+    profile: currentProfile(),
     experience_answers: collectExperienceAnswers(),
     application_answers: collectAppAnswers(),
-  });
+  };
+}
+
+// Shared: POST content to /download-docx and trigger a blob download
+async function downloadDocx(content, errorEl) {
+  try {
+    const res = await fetch("/download-docx", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content, profile: currentProfile(),
+        job_title: $("jobTitle").value.trim(), org_name: $("orgName").value.trim(),
+      }),
+    });
+    if (!res.ok) { if (errorEl) errorEl.textContent = "Download failed."; return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "CoverLetter.docx";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    if (errorEl) errorEl.textContent = "Download failed.";
+  }
+}
+
+$("generateBtn").addEventListener("click", async () => {
+  // In browser-chat / manual mode this button is relabeled and delegates to buildHandoffPrompt
+  if ($("generateBtn").dataset.mode === "handoff") { await buildHandoffPrompt(); return; }
+  if (!requireInputs()) return;
+  busy($("generateBtn"), true, "Generating…");
+  const res = await postJSON("/generate", collectIntakePayload());
   busy($("generateBtn"), false, "Generate cover letter");
   if (!res.success) {
     $("resultCard").style.display = "";
@@ -1007,25 +1102,128 @@ $("refineBtn").addEventListener("click", () => doRefine($("refineInput").value.t
 $("downloadBtn").addEventListener("click", async () => {
   if (!lastContent) return;
   busy($("downloadBtn"), true, "Building…");
-  try {
-    const res = await fetch("/download-docx", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content: lastContent, profile: currentProfile(),
-        job_title: $("jobTitle").value.trim(), org_name: $("orgName").value.trim(),
-      }),
-    });
-    if (!res.ok) { $("resultErr").textContent = "Download failed."; return; }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "CoverLetter.docx";
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  } finally {
-    busy($("downloadBtn"), false, "Download .docx");
+  await downloadDocx(lastContent, $("resultErr"));
+  busy($("downloadBtn"), false, "Download .docx");
+});
+
+// ---- browser-chat handoff --------------------------------------------------
+// applyProviderMode: call whenever the selected provider info is known.
+// info = the provider object ({kind, ...}) or null if nothing selected.
+function applyProviderMode(info) {
+  const manual = info && info.kind === "manual";
+  const btn = $("generateBtn");
+  if (manual) {
+    btn.textContent = "Build prompt for browser AI";
+    btn.dataset.mode = "handoff";
+    // Hide API-key and model rows — not needed for manual/browser-chat
+    $("keyWrap").style.display = "none";
+    $("modelWrap").style.display = "none";
+    $("cliWrap").style.display = "none";
+  } else {
+    btn.textContent = "Generate cover letter";
+    delete btn.dataset.mode;
+    $("handoff-panel").style.display = "none";
+    // Restore key/model/cli visibility via the normal provider-change logic
+    // (onProviderChange handles this; we only need to suppress it in manual mode)
   }
+}
+
+function updateHandoffTradeoff() {
+  const n = parseInt($("handoff-num-samples").value, 10);
+  const c = parseInt($("handoff-sample-chars").value, 10);
+  const lenLabel = c <= 1500 ? "~½ page" : c <= 3000 ? "~1 page" : "~2 pages";
+  if (n === 0) {
+    $("handoff-tradeoff").textContent = "No writing samples — the prompt will be shorter but the AI won't be able to match your voice as closely.";
+  } else {
+    $("handoff-tradeoff").textContent =
+      `${n} sample${n > 1 ? "s" : ""} × ${lenLabel} is` +
+      (n >= 3 && c >= 3000 ? " usually enough." : " a good start.") +
+      " More / longer matches your voice better but makes a longer prompt that uses more of your chat's context limit.";
+  }
+}
+
+// Validate inputs for handoff mode (no providerReady check — that's the point)
+function requireHandoffInputs() {
+  const j = jobContext();
+  if (!j.job_title || !j.org_name || !j.job_description) {
+    alert("Fill in job title, organization, and job description.");
+    return false;
+  }
+  if (currentProfile().background.length < 40) {
+    alert("Add your background (resume / experience text) in Your profile first.");
+    return false;
+  }
+  return true;
+}
+
+async function buildHandoffPrompt() {
+  if (!requireHandoffInputs()) return;
+  const btn = $("generateBtn");
+  busy(btn, true, "Building prompt…");
+  $("handoff-err") && ($("handoff-err").textContent = "");
+  const payload = {
+    ...collectIntakePayload(),
+    num_samples: parseInt($("handoff-num-samples").value, 10),
+    sample_chars: parseInt($("handoff-sample-chars").value, 10),
+  };
+  let res;
+  try { res = await postJSON("/build-handoff-prompt", payload); }
+  catch { res = { success: false, error: "Request failed." }; }
+  busy(btn, false, "Build prompt for browser AI");
+  if (!res.success) {
+    $("handoff-panel").style.display = "";
+    $("handoff-prompt").value = "";
+    $("handoff-size").textContent = "";
+    if ($("handoff-err")) $("handoff-err").textContent = res.error || "Failed to build prompt.";
+    return;
+  }
+  $("handoff-prompt").value = res.prompt || "";
+  const chars = (res.chars || (res.prompt || "").length).toLocaleString();
+  const words = (res.words || Math.round((res.prompt || "").split(/\s+/).filter(Boolean).length)).toLocaleString();
+  $("handoff-size").textContent = `${chars} characters · ~${words} words`;
+  $("handoff-panel").style.display = "";
+  $("handoff-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+$("handoff-copy").addEventListener("click", () => {
+  const ta = $("handoff-prompt");
+  const txt = ta.value;
+  if (!txt) return;
+  const flash = (msg) => {
+    const btn = $("handoff-copy");
+    const orig = btn.dataset.orig || (btn.dataset.orig = btn.textContent);
+    btn.textContent = msg;
+    setTimeout(() => (btn.textContent = orig), 1800);
+  };
+  // Select the text first so a manual copy always works — clipboard API is
+  // unavailable over plain http (e.g. phone on the LAN), so it can't be the only path.
+  ta.focus();
+  ta.select();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt)
+      .then(() => flash("Copied ✓"))
+      .catch(() => flash("Press Ctrl/⌘-C to copy"));
+  } else {
+    flash("Press Ctrl/⌘-C to copy");
+  }
+});
+
+// Rebuild prompt when sample controls change (only if a prompt has been built already)
+$("handoff-num-samples").addEventListener("change", () => {
+  updateHandoffTradeoff();
+  if ($("handoff-prompt").value) buildHandoffPrompt();
+});
+$("handoff-sample-chars").addEventListener("change", () => {
+  updateHandoffTradeoff();
+  if ($("handoff-prompt").value) buildHandoffPrompt();
+});
+
+$("handoff-download").addEventListener("click", async () => {
+  const content = $("handoff-letter").value.trim();
+  if (!content) return;
+  busy($("handoff-download"), true, "Building…");
+  await downloadDocx(content, $("handoff-err"));
+  busy($("handoff-download"), false, "Download .docx");
 });
 
 // ---- init ------------------------------------------------------------------
