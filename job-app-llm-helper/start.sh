@@ -3,15 +3,16 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-if [ ! -d venv ]; then
+# Use the venv's python explicitly so pip and the app share one interpreter.
+VENV_PY="venv/bin/python"
+if [ ! -x "$VENV_PY" ]; then
   echo "Creating virtual environment..."
-  python -m venv venv
+  rm -rf venv
+  python3 -m venv venv
 fi
-# shellcheck disable=SC1091
-source venv/bin/activate
-pip install -q -r requirements.txt
+"$VENV_PY" -m pip install -q -r requirements.txt
 
 # File parsing (.pdf/.docx) is pure-Python via requirements.txt — no system binaries.
 # app.py opens the browser itself once it's up (set JALLM_NO_BROWSER=1 to skip).
 echo "Open http://localhost:5000 in your browser"
-python app.py
+"$VENV_PY" app.py

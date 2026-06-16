@@ -22,8 +22,12 @@ if errorlevel 1 (
 )
 
 REM --- First-run setup ---
-if not exist venv (
+REM Use the venv's python EXPLICITLY everywhere, so pip and the app share one
+REM interpreter (relying on activate + ambient `python` drops deps in the wrong place).
+set "VENV_PY=venv\Scripts\python.exe"
+if not exist "%VENV_PY%" (
   echo First-time setup ^(creating a local environment, ~1 minute^)...
+  if exist venv rmdir /s /q venv
   python -m venv venv
   if errorlevel 1 (
     echo Could not create the environment.
@@ -32,9 +36,8 @@ if not exist venv (
   )
 )
 
-call venv\Scripts\activate.bat
-python -m pip install -q --upgrade pip >nul 2>nul
-python -m pip install -q -r requirements.txt
+"%VENV_PY%" -m pip install --upgrade pip >nul 2>nul
+"%VENV_PY%" -m pip install -r requirements.txt
 if errorlevel 1 (
   echo Could not install dependencies.
   pause
@@ -65,4 +68,4 @@ echo (or use a Claude/ChatGPT/Gemini subscription via its CLI - see README).
 echo.
 echo Keep THIS window open while using the app. Close it to stop.
 echo.
-python app.py
+"%VENV_PY%" app.py

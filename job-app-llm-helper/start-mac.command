@@ -33,15 +33,26 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 # --- First-run setup --------------------------------------------------------
-if [ ! -d venv ]; then
+# Use the venv's python EXPLICITLY everywhere. Relying on `source activate` +
+# ambient `python3` is the classic cause of "deps installed but app can't import
+# them": pip targets one interpreter, the app runs under another.
+VENV_PY="venv/bin/python"
+if [ ! -x "$VENV_PY" ]; then
   echo "First-time setup (creating a local environment, ~1 minute)…"
+  rm -rf venv
   python3 -m venv venv || { echo "Could not create the environment."; read -r -p "Press Return to close."; exit 1; }
 fi
 
-# shellcheck disable=SC1091
-source venv/bin/activate
-python3 -m pip install -q --upgrade pip >/dev/null 2>&1
-python3 -m pip install -q -r requirements.txt || { echo "Could not install dependencies."; read -r -p "Press Return to close."; exit 1; }
+"$VENV_PY" -m pip install --upgrade pip >/dev/null 2>&1
+if ! "$VENV_PY" -m pip install -r requirements.txt; then
+  echo
+  echo "Dependency install failed (see above). Rebuilding the environment and retrying…"
+  rm -rf venv
+  python3 -m venv venv \
+    && "$VENV_PY" -m pip install --upgrade pip >/dev/null 2>&1 \
+    && "$VENV_PY" -m pip install -r requirements.txt \
+    || { echo "Could not install dependencies."; read -r -p "Press Return to close."; exit 1; }
+fi
 
 # --- Optional: install Claude Code (use a Claude subscription, no API key) ---
 if ! command -v claude >/dev/null 2>&1; then
@@ -66,4 +77,4 @@ echo "First time in the app: open “AI provider”, pick one, and paste an API 
 echo
 echo "Keep THIS window open while using the app. Close it (or press Ctrl+C) to stop."
 echo
-python3 app.py
+"$VENV_PY" app.py

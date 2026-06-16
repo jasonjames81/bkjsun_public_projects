@@ -554,6 +554,7 @@ def set_provider_key_route():
 
 if __name__ == "__main__":
     import os
+    import sys
 
     # Prod-safe defaults: debug OFF, bound to localhost. Override via env when you
     # self-host. Set JALLM_HOST=0.0.0.0 to reach it from your phone on the same
@@ -575,6 +576,22 @@ if __name__ == "__main__":
             "Reachable on your LAN — open http://<this-machine-ip>:%d on your phone"
             % port
         )
+
+    # Surface a missing file-parsing dependency loudly here, in the terminal the
+    # user keeps open — otherwise it only shows as an error after they try to
+    # upload. Points at the most common cause: the launcher used a different
+    # Python than this one (so deps installed elsewhere).
+    _missing = []
+    for _mod, _pkg in (("pypdf", "pypdf"), ("docx", "python-docx")):
+        try:
+            __import__(_mod)
+        except ImportError:
+            _missing.append(_pkg)
+    if _missing:
+        print()
+        print(f"  ⚠  File upload (.pdf/.docx) is DISABLED — missing: {', '.join(_missing)}")
+        print(f"     Install into THIS Python:  {sys.executable} -m pip install {' '.join(_missing)}")
+        print("     (You can still paste text directly.)")
     print()
 
     # Pop the browser open so the user lands in the UI instead of staring at the
