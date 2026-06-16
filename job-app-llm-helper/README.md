@@ -13,8 +13,8 @@ the provider you pick.
 ## Download & run
 
 1. Download `job-app-llm-helper.zip` from the
-   [**Releases**](https://github.com/jasonjames81/public_projects/releases) page, unzip it, and
-   open the `job-app-llm-helper` folder.
+   [**Releases**](https://github.com/jasonjames81/bkjsun_public_projects/releases) page, unzip it,
+   and open the `job-app-llm-helper` folder.
 2. Start the launcher for your OS. It sets up a virtualenv on first run (~1 min), then opens the
    app in your browser. Keep the window open while you use it; close it to stop.
 
@@ -28,6 +28,17 @@ Requires **Python 3** — the launcher links you to it if it's missing.
 > right-click bypass.) Open **System Settings → Privacy & Security**, scroll down, click **Open
 > Anyway**, then relaunch. Still stuck? In Terminal, type `xattr -cr ` (with a trailing space),
 > drag the `job-app-llm-helper` folder onto the window, and press Return.
+
+### Updating
+
+You only download and approve once. On each launch the app checks for a newer release and updates
+itself in place — on macOS it also clears the quarantine flag, so there's **no re-download and no
+"Open Anyway" dialog** after the first time. Just relaunch as usual.
+
+Your settings are kept: provider/API-key config lives in your OS config folder and your profile
+lives in the browser, so updates never touch them. To pin a version (or stay offline), set
+`JALLM_NO_UPDATE=1`. *(Auto-update applies to v0.2.5 and later; a one-time manual re-download is
+needed to get onto it from an older copy.)*
 
 ## Connect an LLM
 
