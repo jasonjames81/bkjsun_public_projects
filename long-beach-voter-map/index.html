@@ -83,14 +83,20 @@
             background: #4a90d9;
             color: white;
         }
-        #view-toggle button:hover:not(.active) {
+        #view-toggle button:hover:not(.active):not(:disabled) {
             background: #f4f4f4;
+        }
+        #view-toggle button:disabled {
+            color: #aaa;
+            cursor: not-allowed;
+            font-style: italic;
+            font-weight: normal;
         }
     </style>
 </head>
 <body class="legends-hidden">
 
-<div id="view-toggle"><button id="btn-registration" class="active" onclick="switchView('registration')">Registration</button><button id="btn-turnout" onclick="switchView('turnout')">Turnout</button></div>
+<div id="view-toggle"><button id="btn-registration" class="active" onclick="switchView('registration')">Registration</button><button id="btn-turnout" onclick="switchView('turnout')">Turnout</button><button id="btn-primary" disabled title="June 2026 primary data pending from Statewide Database">Primary 2026 (pending)</button></div>
 <button id="toggle-button" onclick="toggleLegends()">Show Legends</button>
 <div id="map"></div>
 
