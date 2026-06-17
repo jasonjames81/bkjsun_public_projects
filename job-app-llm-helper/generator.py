@@ -436,7 +436,7 @@ def generate_questions(
     org_about="",
     prior_qa: list[dict] | None = None,
 ):
-    """Generate targeted questions to help the applicant recall relevant experiences."""
+    """Generate targeted questions to help the applicant surface useful details for the cover letter."""
     name = profile_mod.applicant_name(profile)
     prior_qa_section = ""
     if prior_qa:
@@ -449,7 +449,7 @@ def generate_questions(
             prior_qa_section += f"\nQ: {qa['question']}\nA: {qa['answer']}\n"
 
     prompt = f"""You are helping {name} prepare to apply for a job. Before writing the cover letter,
-gather specific stories and experiences that relate to this position.
+gather useful details, specific accomplishments, and relevant stories that relate to this position.
 
 === TARGET JOB ===
 Job Title: {job_title}
@@ -464,7 +464,7 @@ About the Organization:
 === YOUR TASK ===
 
 Analyze this job description and generate 4-5 specific, targeted questions that will help the
-applicant recall and articulate relevant experiences for the cover letter.
+applicant surface useful details for the cover letter.
 
 GUIDELINES:
 - Ask about SPECIFIC experiences, projects, or accomplishments (not general questions)
@@ -551,7 +551,7 @@ def _build_cover_letter_prompt(
 
     experience_section = ""
     if experience_answers:
-        experience_section = f"\n=== {name.upper()}'S RELEVANT EXPERIENCES & STORIES FOR THIS ROLE (USE THESE) ===\n"
+        experience_section = f"\n=== {name.upper()}'S USEFUL DETAILS FOR THIS ROLE (USE THESE) ===\n"
         for qa in experience_answers:
             experience_section += f"\nQ: {qa['question']}\nA: {qa['answer']}\n"
 
@@ -617,7 +617,7 @@ def _build_coaching_prompt(
 
     experience_section = ""
     if experience_answers:
-        experience_section = f"\n=== {name.upper()}'S RELEVANT EXPERIENCES & STORIES FOR THIS ROLE ===\n"
+        experience_section = f"\n=== {name.upper()}'S USEFUL DETAILS FOR THIS ROLE ===\n"
         for qa in experience_answers:
             experience_section += f"\nQ: {qa['question']}\nA: {qa['answer']}\n"
 

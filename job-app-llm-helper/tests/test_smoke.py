@@ -113,7 +113,7 @@ def test_coaching_route_threads_profile(client, monkeypatch):
     assert body["success"], body
     assert "INTERVIEW PREPARATION" in body["content"]
     assert "Ada Lovelace" in captured["prompt"] and "Jason" not in captured["prompt"]
-    assert "Note G." in captured["prompt"]  # experience answer threaded
+    assert "Note G." in captured["prompt"]  # useful details answer threaded
 
 
 def test_generate_cover_letter_excludes_coaching_sections(client, monkeypatch):
@@ -239,7 +239,7 @@ def test_answer_application_questions_route(client, monkeypatch):
     assert "150 words" in captured["prompt"] and "1843" in captured["prompt"]
 
 
-def test_generate_includes_experience_and_application_answers(client, monkeypatch):
+def test_generate_includes_useful_details_and_application_answers(client, monkeypatch):
     captured = {}
 
     def fake(prompt, **kw):
@@ -260,7 +260,7 @@ def test_generate_includes_experience_and_application_answers(client, monkeypatc
     )
     assert res.get_json()["success"]
     joined = "\n".join(captured["prompts"])
-    assert "Note G." in joined  # experience answer threaded
+    assert "Note G." in joined  # useful details answer threaded
     assert "The machines." in joined  # application answer threaded (avoid duplication)
 
 

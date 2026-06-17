@@ -2,22 +2,22 @@
 
 Two ways to use this project:
 
-1. **Browser-native** — set up a reusable job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Gems. No install, no API key. Your resume, writing samples, and voice fingerprint live in your platform's Project Knowledge.
+1. **Browser-native** — set up a reusable job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Notebooks. No install, no API key. Your resume, writing samples, and voice fingerprint live in your platform's Project Knowledge.
 2. **Download the app** — a self-hosted Flask app that does the same thing locally, with your own API key, CLI login, or Ollama model. Your data stays on your machine.
 
-Both follow the same 6-step workflow: job fit check → followup questions → any employer questions → draft cover letter → voice polish → refine.
+Both follow the same 7-step workflow: job fit check → useful details → employer questions → draft cover letter → voice polish → refine → interview prep.
 
 ---
 
 ## Use it in your browser (no install needed)
 
-You can set up a job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Gems — all work on free tiers. The LLM handles the full workflow using your resume, writing samples, and voice fingerprint stored in the Project.
+You can set up a job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Notebooks — all work on free tiers. The LLM handles the full workflow using your resume, writing samples, and voice fingerprint stored in the Project.
 
 ### Free vs paid
 
 | | Claude | ChatGPT | Gemini |
 |---|---|---|---|
-| Free tier | Yes (5 projects, Sonnet) | Yes (unlimited, 5 files/project) | Yes (unlimited) |
+| Free tier | Yes (5 projects, Sonnet) | Yes (unlimited, 5 files/project) | Yes (Notebooks: 100 notebooks, 50 sources, 50 chats/day, 32k context) |
 | Paid tier | Pro $20/mo (Opus, unlimited) | Plus $20/mo (25 files) | Advanced $20/mo |
 | Best for | Long-form writing, nuanced voice matching | Broad tool integration, fastest iteration | Google ecosystem users |
 
@@ -26,13 +26,8 @@ All three work great on free tier. Paid adds more files and better models.
 ### Setup (one-time, ~10 min)
 
 1. Pick your platform → [Claude](platform-guide/setup-claude.md) | [ChatGPT](platform-guide/setup-chatgpt.md) | [Gemini](platform-guide/setup-gemini.md)
-2. Create a Project/Gem with the [project instructions](platform-guide/project-instructions.md) (paste into the Instructions field — replace `[YOUR NAME]` with your name)
-3. Upload your resume + writing samples to Project Knowledge
-4. Run the [voice fingerprint prompt](platform-guide/voice-fingerprint-prompt.md) once, paste the output block into Project Knowledge
-
-### Per-application
-
-Paste the [kickoff message](platform-guide/kickoff-template.md) with the job posting and optional org site link. The LLM walks you through the rest.
+2. Follow the setup guide — create a Project/Notebook, upload resume + writing samples + voice fingerprint, paste project instructions
+3. Paste the [kickoff message](platform-guide/kickoff-template.md) with the job posting to start
 
 **Link-fetch note:** If a URL fails to load, the LLM will ask you to paste the text instead. This is normal — paste the job description directly when that happens.
 
@@ -106,8 +101,8 @@ app: it opens the browser sign-in and flips to *Connected ✓* when you're done.
 
 ```
 Your profile (once) + a job posting
-   └─ Check fit ─► (optional) recall experiences ─► (optional) employer questions
-      ─► Generate (draft + voice polish) ─► Refine ─► Download .docx
+   └─ Check fit ─► (optional) useful details ─► (optional) employer questions
+      ─► Generate (draft + voice polish) ─► Refine ─► Interview prep ─► Download .docx
 ```
 
 1. **Provider** — pick one in *AI provider*; *Generate* unlocks once one is ready.
@@ -119,14 +114,16 @@ Your profile (once) + a job posting
    (recent-post coverage depends on what the site exposes).
 4. **Check fit** — proceed / caution / skip, with match score, strengths, concerns, and keyword
    overlap, before you spend a generation.
-5. **Recall experiences** and **employer questions** *(optional)* — answer tailored prompts that
+5. **Useful details** and **employer questions** *(optional)* — answer tailored prompts that
    feed grounded detail into the letter and drafted question answers.
 6. **Generate → Refine → Download** — a two-pass cover letter (draft, then a voice polish that
    scrubs AI tells) plus resume tips and talking points; refine with presets or your own
    instruction; download a formatted `.docx`.
+7. **Interview prep** — generate likely interview questions with talking points, or practice
+   interactively with follow-up coaching.
 
-**Imports:** `.docx` needs `pandoc`, `.pdf` needs `pdftotext` (poppler) — both optional, with a
-clear message if missing. Links work for any public page or a Google Doc *Published to the web*;
+**Imports:** `.docx` and `.pdf` use pure-Python libraries (`python-docx`, `pypdf`) — no external
+tools needed. Links work for any public page or a Google Doc *Published to the web*;
 private docs and LinkedIn profiles need login and won't extract.
 
 ### Run from source

@@ -1,5 +1,7 @@
 # Kickoff Message
 
+> **Tip:** Start a **new chat** within your project/notebook for each new application.
+
 Paste this into your Project chat to start a new application.
 
 ---
@@ -8,6 +10,7 @@ New role.
 
 Job posting: [paste the job description or link]
 Org website: [link to the organization's about/mission page, optional]
+LinkedIn profile: [link, optional]
 
 Walk me through it.
 
