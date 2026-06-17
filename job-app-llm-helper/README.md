@@ -1,5 +1,47 @@
 # Job App LLM Helper
 
+Two ways to use this project:
+
+1. **Browser-native** — set up a reusable job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Gems. No install, no API key. Your resume, writing samples, and voice fingerprint live in the platform's Project Knowledge.
+2. **Download the app** — a self-hosted Flask app that does the same thing locally, with your own API key, CLI login, or Ollama model. Your data stays on your machine.
+
+Both follow the same 6-step workflow: fit check → recall experiences → employer questions → draft cover letter → voice polish → refine.
+
+---
+
+## Use it in your browser (no install needed)
+
+You can set up a job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Gems — all work on free tiers. The LLM handles the full workflow using your resume, writing samples, and voice fingerprint stored in the Project.
+
+### Free vs paid
+
+| | Claude | ChatGPT | Gemini |
+|---|---|---|---|
+| Free tier | Yes (5 projects, Sonnet) | Yes (unlimited, 5 files/project) | Yes (unlimited) |
+| Paid tier | Pro $20/mo (Opus, unlimited) | Plus $20/mo (25 files) | Advanced $20/mo |
+| Best for | Long-form writing, nuanced voice matching | Broad tool integration, fastest iteration | Google ecosystem users |
+
+All three work great on free tier. Paid adds more files and better models.
+
+### Setup (one-time, ~10 min)
+
+1. Pick your platform → [Claude](platform-guide/setup-claude.md) | [ChatGPT](platform-guide/setup-chatgpt.md) | [Gemini](platform-guide/setup-gemini.md)
+2. Create a Project/Gem with the [project instructions](platform-guide/project-instructions.md) (paste into the Instructions field — replace `[YOUR NAME]` with your name)
+3. Upload your resume + writing samples to Project Knowledge
+4. Run the [voice fingerprint prompt](platform-guide/voice-fingerprint-prompt.md) once, paste the output block into Project Knowledge
+
+### Per-application
+
+Paste the [kickoff message](platform-guide/kickoff-template.md) with the job posting and optional org site link. The LLM walks you through the rest.
+
+**Link-fetch note:** If a URL fails to load, the LLM will ask you to paste the text instead. This is normal — paste the job description directly when that happens.
+
+**Privacy note:** Your resume, writing samples, and voice fingerprint live with the platform provider (Anthropic, OpenAI, or Google). Consumer tiers may use your data to improve models unless you opt out. If you need everything to stay on your machine, use the [downloadable app](#download-the-app) instead.
+
+---
+
+## Download the app
+
 A self-hosted Flask app that turns a job posting into a tailored, voice-matched cover letter —
 plus a fit check, drafted answers to employer questions, and interview prep — all grounded in
 your own resume and writing samples. It runs on **whatever LLM access you have**: a
@@ -10,7 +52,7 @@ Everything runs on your own machine. Your profile lives in your browser's `local
 API key is stored locally (file permissions `0600`). Nothing is uploaded except the request to
 the provider you pick.
 
-## Download & run
+### Download & run
 
 1. Download `job-app-llm-helper.zip` from the
    [**Releases**](https://github.com/jasonjames81/bkjsun_public_projects/releases) page, unzip it,
@@ -40,7 +82,7 @@ lives in the browser, so updates never touch them. To pin a version (or stay off
 `JALLM_NO_UPDATE=1`. *(Auto-update applies to v0.2.5 and later; a one-time manual re-download is
 needed to get onto it from an older copy.)*
 
-## Connect an LLM
+### Connect an LLM
 
 You don't need an API key — pick whatever you already have. The app auto-detects what's
 available and marks it ✓ in *AI provider*.
@@ -60,7 +102,7 @@ app: it opens the browser sign-in and flips to *Connected ✓* when you're done.
 > can't be automated within those services' terms. The official CLIs are the supported way to
 > use a subscription — same account, no extra cost.
 
-## How it works
+### How it works
 
 ```
 Your profile (once) + a job posting
@@ -87,7 +129,7 @@ Your profile (once) + a job posting
 clear message if missing. Links work for any public page or a Google Doc *Published to the web*;
 private docs and LinkedIn profiles need login and won't extract.
 
-## Run from source
+### Run from source
 
 ```bash
 ./start.sh            # creates a venv, installs deps, runs the app
@@ -111,7 +153,7 @@ Keys are read from the `platformdirs` config dir (`0600`) or the `ANTHROPIC_API_
 > imports read local files / fetch URLs on the host — so a shared public instance would let
 > visitors spend your key and expose your filesystem. Don't deploy it multi-tenant.
 
-## Architecture
+### Architecture
 
 ```
 app.py          Flask routes; stateless, profile carried per request
@@ -126,7 +168,7 @@ config.py       Default CLI model + subprocess timeout
 tests/          Offline smoke tests (mock provider, no network)
 ```
 
-## Tests
+### Tests
 
 ```bash
 source venv/bin/activate && pip install pytest
