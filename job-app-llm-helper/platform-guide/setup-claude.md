@@ -1,6 +1,6 @@
 # Setting Up with Claude Projects
 
-One-time setup (~10 minutes). Free tier works great.
+One-time setup (~10 minutes). Free tier works.
 
 ## Steps
 
@@ -9,6 +9,7 @@ One-time setup (~10 minutes). Free tier works great.
 3. Name it something like "Job Applications"
 4. Under **Project Knowledge**, upload:
    - Your resume/CV (PDF or DOCX)
+   - LinkedIn profile (URL or exported text)
    - 2-4 writing samples (emails, reports, essays — anything in your natural voice)
    - The voice fingerprint block (paste as text — generate it first using the [voice fingerprint prompt](voice-fingerprint-prompt.md))
 5. Under **Project Instructions**, paste the contents of [project-instructions.md](project-instructions.md) — replace `[YOUR NAME — replace this]` with your actual name
@@ -27,17 +28,16 @@ One-time setup (~10 minutes). Free tier works great.
 
 | Plan | Model | Notes |
 |---|---|---|
-| Free | Sonnet | Works well for cover letters. Handles voice matching adequately. |
-| Pro ($20/mo) | Opus | Best for nuanced voice matching and long-form writing. Recommended if you write a lot of applications. |
+| Free | Sonnet | Good for cover letters and voice matching. |
+| Pro ($20/mo) | Opus | Best for nuanced voice matching and long-form writing. Recommended for frequent applicants. |
 
 ## Free tier limits
 
-- Up to 5 projects, 20 files per project (30 MB each)
-- Sonnet only (no Opus)
-- Memory across conversations is enabled — your Project Knowledge persists
+- 5 projects, 20 files per project (30 MB each), Sonnet only
+- Project Knowledge persists across conversations
 
 ## Tips
 
-- The voice fingerprint is what makes cover letters sound like *you* instead of AI. Generate it once, reuse it forever.
-- If Claude can't fetch a URL you paste, it'll ask you to paste the text instead. This is normal.
+- **First run:** The LLM will ask you to upload any missing materials and generate your voice fingerprint from your writing samples.
+- The voice fingerprint makes cover letters sound like *you* instead of AI. Generate once, reuse forever.
 - Start a **new chat** for each application to keep context clean.

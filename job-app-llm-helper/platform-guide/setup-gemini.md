@@ -1,44 +1,45 @@
-# Setting Up with Gemini Gems
+# Setting Up with Gemini Notebooks
 
 One-time setup (~10 minutes). Free tier works great.
 
 ## Steps
 
 1. Go to [gemini.google.com](https://gemini.google.com) and sign up or log in
-2. Click **Gems** in the left sidebar (or go to [gemini.google.com/gems](https://gemini.google.com/gems))
-3. Click **Create Gem**
-4. Name it something like "Job Applications"
-5. Under **Instructions**, paste the contents of [project-instructions.md](project-instructions.md) — replace `[YOUR NAME — replace this]` with your actual name
-6. Under **Files**, upload:
+2. Click **Notebooks** in the left sidebar → **Create Notebook**
+3. Name it something like "Job Applications"
+4. Upload your core assets as **Sources**:
    - Your resume/CV (PDF or DOCX)
+   - LinkedIn profile (URL or exported text)
    - 2-4 writing samples (emails, reports, essays — anything in your natural voice)
-   - The voice fingerprint block (paste as text or upload a .md file — generate it first using the [voice fingerprint prompt](voice-fingerprint-prompt.md))
-7. Click **Save**
-8. Open your new Gem → paste the [kickoff message](kickoff-template.md) for your first application
+   - The voice fingerprint block (paste as text or upload a .md file — the LLM can also generate this from your writing samples on first run)
+5. Start a new chat within the notebook and paste the contents of [project-instructions.md](project-instructions.md) — replace `[YOUR NAME — replace this]` with your actual name
+6. For each new application, start a **new chat** within the notebook and paste the [kickoff message](kickoff-template.md)
 
-[Screenshot: Gems Manager with "Create Gem" button highlighted]
+[Screenshot: Notebooks sidebar with "Create Notebook" button highlighted]
 
-[Screenshot: Gem creation form showing Instructions and Files sections]
+[Screenshot: Notebook with uploaded Sources visible]
 
-[Screenshot: Saved Gem open in chat with kickoff message]
+[Screenshot: Notebook chat with kickoff message]
 
-## Notes
+## How it works
 
-- Gems can only be **created** on desktop (gemini.google.com), but you can use them on mobile once created.
-- File uploads happen during Gem creation — you can't add files later without editing the Gem.
-- Gemini's free tier has included Gems since March 2025.
+Gemini Notebooks are a structured workspace — you upload core assets (resume, LinkedIn, writing samples, voice fingerprint) as permanent Sources, then start a new chat for each application. The Sources stay loaded across chats, so you don't re-upload everything each time.
+
+Notebooks sync with NotebookLM, so you can also access your materials there.
+
+## Free tier limits
+
+- 100 notebooks, 50 sources per notebook
+- 50 chat queries per day (resets the next day)
+- 32k context window
+- Works across web, Android, and iOS
 
 ## Model notes
 
 Gemini uses the latest available model — no selection needed.
 
-## Free tier limits
-
-- Generous — no explicit file or project limits mentioned
-- Works across web, Android, and iOS
-
 ## Tips
 
 - If Gemini can't fetch a URL you paste, it'll ask you to paste the text instead. This is normal.
 - Start a **new chat** for each application to keep context clean.
-- You can edit the Gem later if you want to update your resume or voice fingerprint.
+- You can add or replace sources later if you update your resume or voice fingerprint.
