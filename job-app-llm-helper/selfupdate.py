@@ -25,6 +25,8 @@ app from starting.
 
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import os
 import shutil
@@ -95,6 +97,15 @@ def find_tarball_url(assets: list[dict]) -> str | None:
     for a in assets or []:
         name = a.get("name", "")
         if name.endswith(".tar.gz"):
+            return a.get("browser_download_url")
+    return None
+
+
+def find_checksum_url(assets: list[dict]) -> str | None:
+    """Look for a .sha256 checksum file alongside the tarball."""
+    for a in assets or []:
+        name = a.get("name", "")
+        if name.endswith(".sha256"):
             return a.get("browser_download_url")
     return None
 
@@ -178,6 +189,19 @@ def run() -> int:
             tmpd = Path(tmp)
             tarball = tmpd / "update.tar.gz"
             _download(url, tarball)
+            sha_url = find_checksum_url(assets)
+            if sha_url:
+                try:
+                    sha_req = urllib.request.Request(sha_url, headers={"User-Agent": "job-app-llm-helper"})
+                    with urllib.request.urlopen(sha_req, timeout=_TIMEOUT) as resp:
+                        sha_raw = resp.read().decode("utf-8").strip()
+                    expected = sha_raw.split()[0]  # format: "hash  filename"
+                    actual = hashlib.sha256(tarball.read_bytes()).hexdigest()
+                    if actual != expected:
+                        print(f"Checksum mismatch — skipping update. Expected {expected[:12]}…, got {actual[:12]}…")
+                        return 1
+                except Exception:
+                    pass  # If checksum fetch fails, proceed without verification (graceful degradation)
             extract = tmpd / "x"
             extract.mkdir()
             with tarfile.open(tarball) as tf:

@@ -1,0 +1,11 @@
+line-length = 100
+
+[lint]
+select = ["E", "F", "W", "I", "B", "S"]
+ignore = [
+    "BLE001",  # broad exception catches — intentional in route error handlers
+    "S310",    # urllib audit URL — self-host only, fixed GitHub/localhost URLs
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["E402"]  # sys.path manipulation in test files

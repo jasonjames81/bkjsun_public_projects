@@ -8,5 +8,5 @@ platformdirs>=4.0
 # install hint only if you select that provider without its SDK.
 #   pip install anthropic              # Anthropic (API key)
 #   pip install openai                 # OpenAI (API key)
-#   pip install google-generativeai    # Google Gemini (API key)
+#   pip install google-genai            # Google Gemini (API key)
 # Ollama (local) needs no Python package — it talks HTTP to localhost:11434.

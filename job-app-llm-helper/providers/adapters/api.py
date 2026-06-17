@@ -24,7 +24,7 @@ def _load_openai():
 
 
 def _load_google():
-    import google.generativeai as genai
+    from google import genai
 
     return genai
 
@@ -115,11 +115,10 @@ class OpenAiApi(_ApiProvider):
 class GoogleApi(_ApiProvider):
     name = "google_api"
     display_name = "Google Gemini (API key)"
-    sdk_pkg = "google-generativeai"
+    sdk_pkg = "google-genai"
 
     def _call(self, prompt: str) -> str:
         genai = _load_google()
-        genai.configure(api_key=self.api_key)
-        model = genai.GenerativeModel(self.model)
-        resp = model.generate_content(prompt)
+        client = genai.Client(api_key=self.api_key)
+        resp = client.models.generate_content(model=self.model, contents=prompt)
         return resp.text.strip()

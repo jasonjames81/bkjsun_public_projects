@@ -53,7 +53,7 @@ non-agentic generate-only mode. No code change made.
 The browser-chat handoff feature (code + `/build-handoff-prompt` route) was
 removed in v0.3.0 (commit `6d8e20c`). It was replaced by a simpler,
 maintenance-free approach: a guide that teaches users to set up platform-native
-assistants using Claude Projects, ChatGPT Projects, or Gemini Gems — no app
+assistants using Claude Projects, ChatGPT Projects, or Gemini Notebooks — no app
 code needed. See `platform-guide/` and the README §1.
 
 The original design docs are archived:

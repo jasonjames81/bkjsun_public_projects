@@ -102,7 +102,7 @@ Same structure as setup-claude.md, adapted for ChatGPT Projects.
 
 ### A6. `platform-guide/setup-gemini.md`
 
-Same structure, adapted for Gemini Gems.
+Same structure, adapted for Gemini Notebooks.
 
 **Key differences:**
 - Gems can only be **created** on desktop (gemini.google.com), but used on mobile
@@ -128,7 +128,7 @@ Same structure, adapted for Gemini Gems.
 ## Use it in your browser (no install needed)
 
 [2-3 sentence overview: You can set up a reusable job-application assistant 
-using Claude Projects, ChatGPT Projects, or Gemini Gems — no download, 
+using Claude Projects, ChatGPT Projects, or Gemini Notebooks — no download, 
 no API key. The LLM handles the full workflow using your resume, writing 
 samples, and voice fingerprint stored in the Project.]
 
@@ -187,7 +187,7 @@ Replace the current §B content with a note:
 The browser-chat handoff feature (code + `/build-handoff-prompt` route) was 
 removed in v0.3.0 (commit `6d8e20c`). It was replaced by a simpler, 
 maintenance-free approach: a guide that teaches users to set up platform-native 
-assistants using Claude Projects, ChatGPT Projects, or Gemini Gems — no app 
+assistants using Claude Projects, ChatGPT Projects, or Gemini Notebooks — no app 
 code needed. See `platform-guide/` and the README §1.
 
 The original design docs are archived:

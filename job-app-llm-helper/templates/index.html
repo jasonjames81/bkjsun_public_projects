@@ -185,9 +185,20 @@
     <div class="status" id="samplesStatus"></div>
     <textarea id="writingSamples" placeholder="…or paste here. Separate multiple samples with a blank line."></textarea>
 
+    <details class="collapse" id="voiceFingerprintBox">
+      <summary id="voiceFingerprintSummary">Voice fingerprint <span class="opt">(computed from writing samples)</span></summary>
+      <div id="voiceFingerprintContent" class="out" style="margin-top:8px; font-size:0.85rem; white-space:pre-wrap"></div>
+      <div class="btns">
+        <button type="button" id="copyFingerprintBtn" class="ghost">Copy</button>
+      </div>
+    </details>
+
     <div class="btns">
       <button type="button" id="saveProfileBtn">Save profile</button>
       <button type="button" id="clearProfileBtn" class="ghost">Clear</button>
+      <button type="button" id="exportProfileBtn" class="ghost">Download profile</button>
+      <button type="button" id="importProfileBtn" class="ghost">Import profile</button>
+      <input type="file" id="importProfileFile" accept=".json" style="display:none">
       <span class="status saved" id="profileSaved"></span>
     </div>
   </div>
@@ -285,8 +296,22 @@ Describe a time you led under pressure. (200 words)"></textarea>
     <div id="coachingOut" class="out"></div>
     <div class="btns">
       <button type="button" id="copyCoachingBtn" class="ghost">Copy</button>
+      <button type="button" id="downloadCoachingDocxBtn" class="ghost">Download .docx</button>
     </div>
     <div id="coachingErr" class="err"></div>
+
+    <!-- Interview practice -->
+    <details class="collapse" id="interviewPracticeBox" style="margin-top:14px">
+      <summary id="interviewPracticeSummary">Interview practice</summary>
+      <div style="margin-top:10px">
+        <div id="interviewChatLog" style="max-height:400px; overflow-y:auto; margin-bottom:10px"></div>
+        <div class="row" style="margin-top:8px">
+          <div style="flex:3 1 200px"><input id="interviewAnswerInput" placeholder="Type your answer…"></div>
+          <div style="flex:1 1 90px"><button type="button" id="submitAnswerBtn">Submit</button></div>
+        </div>
+        <div class="err" id="interviewErr"></div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -1036,11 +1061,181 @@ async function doRefine(instruction) {
   showResult(res.letter);
 }
 $("refineBtn").addEventListener("click", () => doRefine($("refineInput").value.trim()));
-$("downloadBtn").addEventListener("click", async () => {
+ $("downloadBtn").addEventListener("click", async () => {
   if (!lastContent) return;
   busy($("downloadBtn"), true, "Building…");
   await downloadDocx(lastContent, $("resultErr"));
   busy($("downloadBtn"), false, "Download .docx");
+});
+
+// ---- profile export/import (D2) -------------------------------------------
+$("exportProfileBtn").addEventListener("click", () => {
+  const data = readProfileForm();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "job-app-profile.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+$("importProfileBtn").addEventListener("click", () => $("importProfileFile").click());
+$("importProfileFile").addEventListener("change", () => {
+  const file = $("importProfileFile").files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.applicant_name) $("applicantName").value = data.applicant_name;
+      if (data.contact) {
+        if (data.contact.city_state) $("cityState").value = data.contact.city_state;
+        if (data.contact.phone) $("phone").value = data.contact.phone;
+        if (data.contact.email) $("email").value = data.contact.email;
+        if (data.contact.linkedin) $("linkedin").value = data.contact.linkedin;
+      }
+      if (data.background) $("background").value = data.background;
+      if (data.writing_samples) $("writingSamples").value = data.writing_samples;
+      if (data.stories) $("stories").value = data.stories;
+      saveProfile();
+      $("profileSaved").textContent = "Imported ✓";
+      setTimeout(() => ($("profileSaved").textContent = ""), 2000);
+    } catch { alert("Invalid profile file."); }
+  };
+  reader.readAsText(file);
+  $("importProfileFile").value = "";
+});
+
+// ---- voice fingerprint (D4) ------------------------------------------------
+let voiceFingerprintTimer = null;
+function scheduleVoiceFingerprint() {
+  clearTimeout(voiceFingerprintTimer);
+  voiceFingerprintTimer = setTimeout(computeVoiceFingerprint, 1200);
+}
+async function computeVoiceFingerprint() {
+  const samples = $("writingSamples").value.trim();
+  if (!samples) { $("voiceFingerprintContent").textContent = ""; return; }
+  try {
+    const res = await postJSON("/compute-voice-fingerprint", { profile: currentProfile() });
+    if (res.ok) $("voiceFingerprintContent").textContent = res.fingerprint || "";
+  } catch {}
+}
+$("copyFingerprintBtn").addEventListener("click", () =>
+  navigator.clipboard && navigator.clipboard.writeText($("voiceFingerprintContent").textContent)
+);
+$("writingSamples").addEventListener("input", scheduleVoiceFingerprint);
+
+// ---- coaching docx download (D3) -------------------------------------------
+$("downloadCoachingDocxBtn").addEventListener("click", async () => {
+  const content = $("coachingOut").textContent;
+  if (!content) return;
+  busy($("downloadCoachingDocxBtn"), true, "Building…");
+  try {
+    const res = await fetch("/download-coaching-docx", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content, job_title: $("jobTitle").value.trim(), org_name: $("orgName").value.trim(),
+      }),
+    });
+    if (!res.ok) { $("coachingErr").textContent = "Download failed."; return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "CoachingTips.docx";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } catch { $("coachingErr").textContent = "Download failed."; }
+  busy($("downloadCoachingDocxBtn"), false, "Download .docx");
+});
+
+// ---- interview practice (D1) -----------------------------------------------
+let interviewHistory = [];
+let interviewActive = false;
+let interviewBusy = false;
+
+function renderInterviewChat() {
+  const log = $("interviewChatLog");
+  log.innerHTML = "";
+  interviewHistory.forEach((entry) => {
+    // interviewer question
+    const qDiv = document.createElement("div");
+    qDiv.style.cssText = "margin-bottom:8px;padding:8px 12px;background:#eef2f8;border-radius:8px;max-width:85%";
+    qDiv.innerHTML = `<strong>Interviewer:</strong> ${escapeHtml(entry.question)}`;
+    log.appendChild(qDiv);
+    // user answer
+    if (entry.answer) {
+      const aDiv = document.createElement("div");
+      aDiv.style.cssText = "margin-bottom:8px;padding:8px 12px;background:#f0fdf4;border-radius:8px;max-width:85%;margin-left:auto;text-align:right";
+      aDiv.innerHTML = `<strong>You:</strong> ${escapeHtml(entry.answer)}`;
+      log.appendChild(aDiv);
+    }
+    // feedback
+    if (entry.feedback) {
+      const fDiv = document.createElement("div");
+      fDiv.style.cssText = "margin-bottom:8px;padding:8px 12px;background:#fffbeb;border-radius:8px;max-width:85%;font-size:0.9em";
+      fDiv.innerHTML = `<strong>Feedback:</strong> ${escapeHtml(entry.feedback)}`;
+      log.appendChild(fDiv);
+    }
+  });
+  log.scrollTop = log.scrollHeight;
+}
+
+async function startInterviewPractice() {
+  if (!requireInputs()) return;
+  interviewHistory = [];
+  interviewActive = true;
+  $("interviewChatLog").innerHTML = "";
+  $("interviewAnswerInput").value = "";
+  $("interviewErr").textContent = "";
+  // generate first question
+  interviewBusy = true;
+  const res = await postJSON("/interview-practice", {
+    ...jobContext(), profile: currentProfile(),
+    question: "(Start of interview)",
+    user_answer: "I'm ready to begin.",
+    prior_qa: [],
+  });
+  interviewBusy = false;
+  if (!res.success) { $("interviewErr").textContent = res.error || "Failed to start."; return; }
+  interviewHistory.push({ question: res.next_question, answer: "", feedback: "" });
+  renderInterviewChat();
+}
+
+async function submitInterviewAnswer() {
+  if (!interviewActive || interviewBusy) return;
+  const answer = $("interviewAnswerInput").value.trim();
+  if (!answer) return;
+  $("interviewAnswerInput").value = "";
+  // update last entry with the answer
+  const last = interviewHistory[interviewHistory.length - 1];
+  if (last) last.answer = answer;
+  renderInterviewChat();
+
+  interviewBusy = true;
+  $("submitAnswerBtn").disabled = true;
+  const priorQa = interviewHistory.slice(0, -1).map((e) => ({ question: e.question, answer: e.answer }));
+  const res = await postJSON("/interview-practice", {
+    ...jobContext(), profile: currentProfile(),
+    question: last ? last.question : "",
+    user_answer: answer,
+    prior_qa: priorQa,
+  });
+  interviewBusy = false;
+  $("submitAnswerBtn").disabled = false;
+  if (!res.success) { $("interviewErr").textContent = res.error || "Failed."; return; }
+  if (last) { last.feedback = res.feedback; }
+  interviewHistory.push({ question: res.next_question, answer: "", feedback: "" });
+  renderInterviewChat();
+}
+
+$("interviewPracticeSummary").addEventListener("click", () => {
+  if (!interviewActive) startInterviewPractice();
+});
+$("submitAnswerBtn").addEventListener("click", submitInterviewAnswer);
+$("interviewAnswerInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitInterviewAnswer(); }
 });
 
 

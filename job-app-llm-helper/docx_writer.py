@@ -11,15 +11,11 @@ from __future__ import annotations
 import io
 import re
 from datetime import date
+from profile import _CLOSING_RE, _SALUTATION_RE
 
 from docx import Document
 from docx.shared import Pt, RGBColor
 
-_SALUTATION_RE = re.compile(r"^\s*(Dear\s|To Whom)", re.IGNORECASE)
-_CLOSING_RE = re.compile(
-    r"^\s*(Sincerely|Best regards|Best,|Warm regards|Warmly|Kind regards|Yours truly|Cordially)",
-    re.IGNORECASE,
-)
 _COVER_LETTER_SECTION_RE = re.compile(
     r"##\s*1\.\s*TAILORED COVER LETTER\s*\n(.*?)(?=\n##\s*2\.)",
     re.DOTALL | re.IGNORECASE,
@@ -150,6 +146,46 @@ def build_cover_letter_docx(
     document.add_paragraph()  # space for signature
     document.add_paragraph()
     document.add_paragraph(contact.get("name", ""))
+
+    buffer = io.BytesIO()
+    document.save(buffer)
+    return buffer.getvalue()
+
+
+def build_coaching_docx(
+    content: str,
+    *,
+    job_title: str = "",
+    org_name: str = "",
+) -> bytes:
+    """Build a formatted .docx from coaching markdown content. Returns bytes."""
+    document = Document()
+
+    style = document.styles["Normal"]
+    style.font.name = "Calibri"
+    style.font.size = Pt(11)
+
+    if org_name or job_title:
+        title_parts = [p for p in [org_name, job_title] if p]
+        title_para = document.add_paragraph()
+        title_run = title_para.add_run(" — ".join(title_parts))
+        title_run.bold = True
+        title_run.font.size = Pt(14)
+        document.add_paragraph()
+
+    for line in content.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("## "):
+            p = document.add_paragraph()
+            r = p.add_run(stripped[3:].strip())
+            r.bold = True
+            r.font.size = Pt(12)
+        elif stripped.startswith("- "):
+            document.add_paragraph(stripped[2:].strip(), style="List Bullet")
+        else:
+            document.add_paragraph(stripped)
 
     buffer = io.BytesIO()
     document.save(buffer)

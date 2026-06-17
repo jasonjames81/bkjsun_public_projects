@@ -279,10 +279,7 @@ GUIDELINES:
 
     try:
         response = call_llm(prompt)
-        match = re.search(r"\{[\s\S]*\}", response)
-        if not match:
-            raise ValueError("no JSON object in response")
-        data = json.loads(match.group(0))
+        data = _extract_json(response, array=False)
         data["success"] = True
         return data
     except Exception as e:
@@ -487,10 +484,7 @@ Respond with ONLY a JSON array of 4-5 question strings, no other text:
 
     try:
         response = call_llm(prompt)
-        json_match = re.search(r"\[[\s\S]*\]", response)
-        if not json_match:
-            raise ValueError("No JSON array found in response")
-        questions = json.loads(json_match.group())
+        questions = _extract_json(response, array=True)
         return {"success": True, "questions": questions}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -534,6 +528,16 @@ Constraints:
     return polished or draft
 
 
+def _format_experience_section(name: str, experience_answers, *, add_use_prompt: bool = False) -> str:
+    if not experience_answers:
+        return ""
+    suffix = " (USE THESE)" if add_use_prompt else ""
+    section = f"\n=== {name.upper()}'S USEFUL DETAILS FOR THIS ROLE{suffix} ===\n"
+    for qa in experience_answers:
+        section += f"\nQ: {qa['question']}\nA: {qa['answer']}\n"
+    return section
+
+
 def _build_cover_letter_prompt(
     profile: dict,
     job_title: str,
@@ -549,11 +553,7 @@ def _build_cover_letter_prompt(
     voice_block = profile_mod.build_voice_fingerprint(profile)
     stories_block = profile_mod.build_stories_block(profile)
 
-    experience_section = ""
-    if experience_answers:
-        experience_section = f"\n=== {name.upper()}'S USEFUL DETAILS FOR THIS ROLE (USE THESE) ===\n"
-        for qa in experience_answers:
-            experience_section += f"\nQ: {qa['question']}\nA: {qa['answer']}\n"
+    experience_section = _format_experience_section(name, experience_answers, add_use_prompt=True)
 
     application_answers_section = ""
     if application_answers:
@@ -615,11 +615,7 @@ def _build_coaching_prompt(
     profile_block = profile_mod.build_profile_summary(profile)
     stories_block = profile_mod.build_stories_block(profile)
 
-    experience_section = ""
-    if experience_answers:
-        experience_section = f"\n=== {name.upper()}'S USEFUL DETAILS FOR THIS ROLE ===\n"
-        for qa in experience_answers:
-            experience_section += f"\nQ: {qa['question']}\nA: {qa['answer']}\n"
+    experience_section = _format_experience_section(name, experience_answers)
 
     return f"""You are coaching {name} on how to position themselves for a specific job. Base every
 suggestion only on the materials below — never invent experience the applicant doesn't show.
@@ -761,5 +757,65 @@ def generate_coaching(
             "job_title": job_title,
             "org_name": org_name,
         }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def generate_interview_followup(
+    profile: dict,
+    question: str,
+    user_answer: str,
+    prior_qa: list[dict],
+    job_title: str,
+    org_name: str,
+    job_description: str,
+    org_about: str = "",
+) -> dict:
+    """Generate a coaching follow-up for an interview practice answer."""
+    name = profile_mod.applicant_name(profile)
+    voice_block = profile_mod.build_voice_fingerprint(profile)
+    profile_block = profile_mod.build_profile_summary(profile)
+
+    prior_section = ""
+    if prior_qa:
+        prior_section = "\n=== PREVIOUS Q&A IN THIS SESSION ===\n"
+        for qa in prior_qa:
+            prior_section += f"\nQ: {qa['question']}\nA: {qa['answer']}\n"
+
+    prompt = f"""You are coaching {name} in a mock interview. They just answered a question.
+Provide brief, specific feedback on their answer, then ask the next likely interview question.
+
+{voice_block}
+
+{profile_block}
+
+=== TARGET JOB ===
+Job Title: {job_title}
+Organization: {org_name}
+
+Job Description:
+{job_description}
+
+About the Organization:
+{org_about if org_about else "Not provided"}
+{prior_section}
+=== CURRENT QUESTION & ANSWER ===
+Q: {question}
+A: {user_answer}
+
+=== YOUR TASK ===
+
+1. Give 1-2 sentences of coaching feedback on the answer (what worked, what to improve).
+2. Ask the next likely interview question for this role.
+
+Output ONLY a JSON object:
+{{"feedback": "<coaching feedback>", "next_question": "<next interview question>"}}
+
+No prose outside the JSON. No markdown fences."""
+
+    try:
+        response = call_llm(prompt)
+        data = _extract_json(response, array=False)
+        return {"success": True, "feedback": data.get("feedback", ""), "next_question": data.get("next_question", "")}
     except Exception as e:
         return {"success": False, "error": str(e)}

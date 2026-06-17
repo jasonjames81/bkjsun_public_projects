@@ -24,6 +24,7 @@ import io
 import re
 import tempfile
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -233,20 +234,32 @@ def crawl_site(url: str) -> str:
 
     sections: list[str] = []
     total = 0
-    seen: set[str] = set()
-    for cand in candidates:
-        if cand in seen or total >= _CRAWL_MAX_CHARS:
-            continue
-        seen.add(cand)
+
+    def _fetch_one(cand: str) -> str | None:
         try:
             text = load_url(cand).strip()
         except SourceError:
-            continue
-        if len(text) < 80:  # skip empty/redirect stubs
-            continue
-        chunk = text[: _CRAWL_MAX_CHARS - total]
-        sections.append(f"--- {cand} ---\n{chunk}")
-        total += len(chunk)
+            return None
+        if len(text) < 80:
+            return None
+        return text
+
+    unique = list(dict.fromkeys(candidates))
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {pool.submit(_fetch_one, c): c for c in unique}
+        for future in as_completed(futures):
+            cand = futures[future]
+            if total >= _CRAWL_MAX_CHARS:
+                break
+            try:
+                text = future.result()
+            except Exception:
+                continue
+            if text is None:
+                continue
+            chunk = text[: _CRAWL_MAX_CHARS - total]
+            sections.append(f"--- {cand} ---\n{chunk}")
+            total += len(chunk)
     if not sections:
         raise SourceError("couldn't fetch any readable pages from that site")
     return "\n\n".join(sections)

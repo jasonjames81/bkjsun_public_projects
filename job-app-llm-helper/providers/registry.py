@@ -84,22 +84,13 @@ def _list_api_models(name: str, config: ProviderConfig) -> list[str]:
 
             return [m.id for m in OpenAI(api_key=key).models.list()]
         if name == "google_api":
-            import google.generativeai as genai
+            from google import genai
 
-            genai.configure(api_key=key)
-            return [m.name for m in genai.list_models()]
+            client = genai.Client(api_key=key)
+            return [m.name for m in client.models.list()]
     except Exception:
         return []
     return []
 
 
-def resolve_default_model(name: str, available: list[str]) -> str | None:
-    """Pick a sensible default from a live model list using the family keyword."""
-    if not available:
-        return None
-    family = PREFERRED_FAMILY.get(name)
-    if family:
-        preferred = [m for m in available if family in m.lower()]
-        if preferred:
-            return preferred[0]
-    return available[0]
+

@@ -15,7 +15,7 @@ from datetime import date
 from flask import Flask, Response, jsonify, render_template, request
 
 import profile as profile_mod
-from docx_writer import build_cover_letter_docx, extract_cover_letter_section
+from docx_writer import build_cover_letter_docx, build_coaching_docx, extract_cover_letter_section
 import re
 
 from generator import (
@@ -26,6 +26,7 @@ from generator import (
     generate_clarifying_questions,
     generate_coaching,
     generate_cover_letter,
+    generate_interview_followup,
     generate_questions,
     refine_letter,
     summarize_org,
@@ -60,16 +61,6 @@ def _regex_contact(text: str) -> dict:
 
 
 app = Flask(__name__)
-
-_PROVIDER_CONFIG = None
-
-
-def _provider_config_for_request():
-    global _PROVIDER_CONFIG
-    if _PROVIDER_CONFIG is None:
-        _PROVIDER_CONFIG = ProviderConfig().load()
-    return _PROVIDER_CONFIG
-
 
 def _profile_from(data: dict) -> dict:
     """Pull the applicant profile out of a request body, defaulting to empty."""
@@ -349,6 +340,57 @@ def coaching():
     )
 
 
+@app.route("/interview-practice", methods=["POST"])
+def interview_practice():
+    data = request.json or {}
+    question = data.get("question", "").strip()
+    user_answer = data.get("user_answer", "").strip()
+    prior_qa = data.get("prior_qa", [])
+    job_title, org_name, job_description, org_about = _job_fields(data)
+    if not question or not user_answer:
+        return jsonify({"success": False, "error": "Need both question and user_answer"}), 400
+    if not job_title or not org_name or not job_description:
+        return _missing_job()
+    return jsonify(
+        generate_interview_followup(
+            _profile_from(data),
+            question=question,
+            user_answer=user_answer,
+            prior_qa=prior_qa,
+            job_title=job_title,
+            org_name=org_name,
+            job_description=job_description,
+            org_about=org_about,
+        )
+    )
+
+
+@app.route("/download-coaching-docx", methods=["POST"])
+def download_coaching_docx():
+    data = request.json or {}
+    content = data.get("content", "").strip()
+    job_title = data.get("job_title", "").strip()
+    org_name = data.get("org_name", "").strip()
+    if not content:
+        return jsonify({"success": False, "error": "content is required"}), 400
+    docx_bytes = build_coaching_docx(content, job_title=job_title, org_name=org_name)
+    safe_org = org_name.replace(" ", "_").replace("/", "_") or "Application"
+    safe_role = job_title.replace(" ", "_").replace("/", "_") or "Tips"
+    filename = f"CoachingTips_{safe_org}_{safe_role}.docx"
+    return Response(
+        docx_bytes,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.route("/compute-voice-fingerprint", methods=["POST"])
+def compute_voice_fingerprint():
+    profile = _profile_from(request.get_json(silent=True) or {})
+    fingerprint = profile_mod.build_voice_fingerprint(profile)
+    return jsonify({"ok": True, "fingerprint": fingerprint})
+
+
 @app.route("/refine", methods=["POST"])
 def refine():
     data = request.json or {}
@@ -412,7 +454,7 @@ def test_api():
 
 @app.route("/providers")
 def list_providers_route():
-    cfg = _provider_config_for_request()
+    cfg = ProviderConfig().load()
     infos = detect_providers(cfg)
     return jsonify(
         {
@@ -436,7 +478,7 @@ def list_providers_route():
 
 @app.route("/providers/models")
 def provider_models_route():
-    cfg = _provider_config_for_request()
+    cfg = ProviderConfig().load()
     name = (request.args.get("name") or "").strip()
     return jsonify({"models": list_models(name, cfg)})
 
@@ -466,7 +508,7 @@ def cli_login_route():
 def select_provider_route():
     data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip()
-    cfg = _provider_config_for_request()
+    cfg = ProviderConfig().load()
     known = {i.name for i in detect_providers(cfg)}
     if name not in known:
         return jsonify({"success": False, "error": f"unknown provider '{name}'"}), 400
@@ -485,7 +527,7 @@ def set_provider_key_route():
     key = (data.get("key") or "").strip()
     if not name or not key:
         return jsonify({"success": False, "error": "name and key are required"}), 400
-    cfg = _provider_config_for_request()
+    cfg = ProviderConfig().load()
     captured = {}
     cfg.set_key(name, key, on_consent=lambda msg: captured.setdefault("msg", msg))
     cfg.save()
