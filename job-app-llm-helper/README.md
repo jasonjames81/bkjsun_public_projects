@@ -61,6 +61,7 @@ the provider you pick.
 
 Requires **Python 3** — the launcher links you to it if it's missing.
 
+### macOS one-time security unblock
 > **macOS shows "Apple could not verify…" with only *Move to Trash*?** (Sequoia removed the
 > right-click bypass.) Open **System Settings → Privacy & Security**, scroll down, click **Open
 > Anyway**, then relaunch. Still stuck? In Terminal, type `xattr -cr ` (with a trailing space),
