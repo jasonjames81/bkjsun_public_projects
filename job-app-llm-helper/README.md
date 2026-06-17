@@ -2,10 +2,10 @@
 
 Two ways to use this project:
 
-1. **Browser-native** — set up a reusable job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Gems. No install, no API key. Your resume, writing samples, and voice fingerprint live in the platform's Project Knowledge.
+1. **Browser-native** — set up a reusable job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Gems. No install, no API key. Your resume, writing samples, and voice fingerprint live in your platform's Project Knowledge.
 2. **Download the app** — a self-hosted Flask app that does the same thing locally, with your own API key, CLI login, or Ollama model. Your data stays on your machine.
 
-Both follow the same 6-step workflow: fit check → recall experiences → employer questions → draft cover letter → voice polish → refine.
+Both follow the same 6-step workflow: job fit check → followup questions → any employer questions → draft cover letter → voice polish → refine.
 
 ---
 
