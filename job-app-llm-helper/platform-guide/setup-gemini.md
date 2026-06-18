@@ -9,10 +9,9 @@ One-time setup (~10 minutes). Free tier works great.
 3. Name it something like "Job Applications"
 4. Upload your core assets as **Sources**:
    - Your resume/CV (PDF or DOCX)
-   - LinkedIn profile (URL or exported text)
-   - 2-4 writing samples (emails, reports, essays — anything in your natural voice)
-   - The voice fingerprint block (paste as text or upload a .md file — the LLM can also generate this from your writing samples on first run)
-5. Start a new chat within the notebook and paste the contents of [project-instructions.md](project-instructions.md) — replace `[YOUR NAME — replace this]` with your actual name
+   - *(Optional)* LinkedIn profile — to include it, open your own profile on linkedin.com, click **More → Save to PDF**, then upload that PDF. (A URL or exported text also works.)
+   - 2-4 recent writing samples — ideally past cover letters and reports (essays, blog posts, or emails also work), anything in your natural voice. The assistant uses these to build your voice fingerprint on first run, and matches a cover letter's formatting if you include one.
+5. Add the project instructions: open the **⋮** menu next to NotebookLM (top-right) → **Notebook settings** → **Instructions**, and paste the contents of [project-instructions.md](project-instructions.md). This is a single instruction set shared across Gemini and NotebookLM — no edits needed; your name comes from your uploaded Sources.
 6. For each new application, start a **new chat** within the notebook and paste the [kickoff message](kickoff-template.md)
 
 [Screenshot: Notebooks sidebar with "Create Notebook" button highlighted]
@@ -23,7 +22,7 @@ One-time setup (~10 minutes). Free tier works great.
 
 ## How it works
 
-Gemini Notebooks are a structured workspace — you upload core assets (resume, LinkedIn, writing samples, voice fingerprint) as permanent Sources, then start a new chat for each application. The Sources stay loaded across chats, so you don't re-upload everything each time.
+Gemini Notebooks are a structured workspace — you upload core assets (resume, LinkedIn, writing samples, and optionally a voice fingerprint) as permanent Sources, then start a new chat for each application. The Sources stay loaded across chats, so you don't re-upload everything each time.
 
 Notebooks sync with NotebookLM, so you can also access your materials there.
 

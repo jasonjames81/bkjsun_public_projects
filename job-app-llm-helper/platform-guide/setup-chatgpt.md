@@ -5,23 +5,22 @@ One-time setup (~10 min). Free tier works.
 ## Steps
 
 1. Go to [chatgpt.com](https://chatgpt.com) and sign up or log in
-2. Click **Projects** in the left sidebar → **Create Project**
+2. Click **Projects** in the left sidebar → **New project**
 3. Name it something like "Job Applications"
-4. Under **Project Knowledge**, upload:
+4. Click **Add files** and upload:
    - Your resume/CV
-   - LinkedIn profile (URL or exported text)
-   - 2-4 writing samples (emails, reports, essays — anything in your natural voice)
-   - Voice fingerprint (paste as text or upload a .md — generate it first using the [voice fingerprint prompt](voice-fingerprint-prompt.md))
-5. Under **Project Instructions**, paste the contents of [project-instructions.md](project-instructions.md) — replace `[YOUR NAME — replace this]` with your actual name
+   - *(Optional)* LinkedIn profile — to include it, open your own profile on linkedin.com, click **More → Save to PDF**, then upload that PDF. (A URL or exported text also works.)
+   - 2-4 recent writing samples — ideally past cover letters and reports (essays, blog posts, or emails also work), anything in your natural voice. The assistant uses these to build your voice fingerprint on first run, and matches a cover letter's formatting if you include one.
+5. Under **Project instructions**, paste the contents of [project-instructions.md](project-instructions.md) — no edits needed; your name comes from your uploaded files.
 6. Start a new chat → paste the [kickoff message](kickoff-template.md) for your first application
 
 > **First run:** The LLM will ask you to upload any missing materials and generate your voice fingerprint from your writing samples.
 
-[Screenshot: Projects sidebar with "Create Project" button highlighted]
+[Screenshot: Projects sidebar with "New project" button highlighted]
 
-[Screenshot: Project Knowledge section with uploaded files visible]
+[Screenshot: Add files section with uploaded files visible]
 
-[Screenshot: Project Instructions text area with content pasted]
+[Screenshot: Project instructions text area with content pasted]
 
 ## Model notes
 

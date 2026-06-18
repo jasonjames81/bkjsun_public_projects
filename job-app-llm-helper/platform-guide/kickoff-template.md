@@ -20,4 +20,4 @@ Walk me through it.
 
 - If the job posting is a URL, the LLM will try to fetch it. If it fails (which happens), paste the text directly.
 - The org website link is optional but helps the LLM tailor the cover letter to the organization's mission and tone.
-- The LLM already has your resume, writing samples, and voice fingerprint from Project Knowledge. No need to repeat anything.
+- The LLM already has your resume, writing samples, and voice fingerprint from the project's files. No need to repeat anything.

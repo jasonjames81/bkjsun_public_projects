@@ -2,16 +2,16 @@
 
 Two ways to use this project:
 
-1. **Browser-native** — set up a reusable job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Notebooks. No install, no API key. Your resume, writing samples, and voice fingerprint live in your platform's Project Knowledge.
+1. **Use in Browser** — set up a reusable job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Notebooks. No install, no API key. Your resume and writing samples live in your platform's project files; the assistant builds a voice fingerprint from them.
 2. **Download the app** — a self-hosted Flask app that does the same thing locally, with your own API key, CLI login, or Ollama model. Your data stays on your machine.
 
-Both follow the same 7-step workflow: job fit check → useful details → employer questions → draft cover letter → voice polish → refine → interview prep.
+Both follow the same workflow: job fit check → useful details → employer questions → draft cover letter → voice polish → refine → résumé & LinkedIn tune-up → interview prep.
 
 ---
 
 ## Use it in your browser (no install needed)
 
-You can set up a job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Notebooks — all work on free tiers. The LLM handles the full workflow using your resume, writing samples, and voice fingerprint stored in the Project.
+You can set up a job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Notebooks — all work on free tiers. The LLM handles the full workflow using your resume and writing samples stored in the project — it builds a voice fingerprint from them.
 
 ### Free vs paid
 
@@ -26,7 +26,7 @@ All three work great on free tier. Paid adds more files and better models.
 ### Setup (one-time, ~10 min)
 
 1. Pick your platform → [Claude](platform-guide/setup-claude.md) | [ChatGPT](platform-guide/setup-chatgpt.md) | [Gemini](platform-guide/setup-gemini.md)
-2. Follow the setup guide — create a Project/Notebook, upload resume + writing samples + voice fingerprint, paste project instructions
+2. Follow the setup guide — create a Project/Notebook, upload resume + writing samples, paste project instructions (the assistant builds your voice fingerprint on first run)
 3. Paste the [kickoff message](platform-guide/kickoff-template.md) with the job posting to start
 
 **Link-fetch note:** If a URL fails to load, the LLM will ask you to paste the text instead. This is normal — paste the job description directly when that happens.

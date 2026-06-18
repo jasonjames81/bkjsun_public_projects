@@ -1,6 +1,6 @@
 # Voice Fingerprint Prompt
 
-> v0.1 — test and refine. Run this once with your writing samples. The output goes into your Project's Knowledge section.
+> v0.1 — test and refine. Run this once with your writing samples. The output goes into your project's files (Claude: **Files**, ChatGPT: **Add files**, Gemini: **Sources**).
 
 ## What this does
 
@@ -11,7 +11,7 @@ This prompt analyzes your writing samples and produces a "Voice Fingerprint" —
 1. Start a new conversation (not your job-application Project)
 2. Upload 2-4 writing samples: emails, reports, essays, blog posts — anything in your natural voice
 3. Paste the prompt below
-4. Copy the output block and paste it into your Project's Knowledge section
+4. Copy the output block and paste it into your project's files (Claude: **Files**, ChatGPT: **Add files**, Gemini: **Sources**)
 
 ## The prompt
 
@@ -46,7 +46,7 @@ Please analyze the writing samples I've uploaded and create a Voice Fingerprint 
 - Note phrases I use that AI would never generate naturally
 - Identify my "voice signatures" — the things that make my writing recognizably mine
 
-Output your analysis as a single markdown block labeled `## Voice Fingerprint`. Format each dimension as a bullet point or short paragraph. Keep it concise — this will be pasted into a Project's Knowledge section, so aim for 200-400 words total.
+Output your analysis as a single markdown block labeled `## Voice Fingerprint`. Format each dimension as a bullet point or short paragraph. Keep it concise — this will be pasted into your project's files, so aim for 200-400 words total.
 
 ---
 
