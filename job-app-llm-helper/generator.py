@@ -517,7 +517,7 @@ structure, and every factual claim:
 1. Phrases on the "Do NOT use" list — replace with voice-matching alternatives.
 2. Generic AI cadence — triadic flourishes, hollow superlatives, meta-statements about being thrilled or excited.
 3. Sentences that don't sound like the voice exemplars — adjust rhythm, register, and connective phrasing.
-4. Closing lines that summarize the letter — replace with a characteristic closer.
+4. Summary "buttons" — any paragraph (not just the closing) that ends on a flourish restating or elevating its point. Cut the flourish; let the concrete sentence be the last one. For the final paragraph specifically, replace a summarizing close with a characteristic closer.
 
 Constraints:
 - Do not invent new facts, numbers, organizations, or stories. Every concrete claim must already be in the draft.

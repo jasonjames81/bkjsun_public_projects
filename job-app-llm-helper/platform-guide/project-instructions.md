@@ -131,6 +131,7 @@ After drafting, scan for and remove these common AI-generated phrases:
 - Excessive hedging ("I think perhaps") → be direct
 - "Utilize" → use "use"
 - "Furthermore" / "Moreover" / "In addition" → simpler transitions
+- **Summary "buttons"** — paragraphs (or sets of related sentences) that end on a flourish restating or elevating the point ("It's exactly the pivotal moment where…", "and that's what real impact looks like") → cut it; let the concrete sentence be the last one. This reads as essay/blog rhetoric and sounds performed in a letter or email. Carry energy with active verbs, not closing flourishes.
 - Any sentence that could appear in any cover letter → rewrite with specifics
 
 Use the Voice Fingerprint as your target. If a sentence doesn't sound like the user wrote it, rewrite it.
