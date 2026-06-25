@@ -1,5 +1,7 @@
 # Job App LLM Helper
 
+> 🌐 **New here? Start at the friendly setup page → https://job-app-helper-iota.vercel.app**
+
 Two ways to use this project:
 
 1. **Use in Browser** — set up a reusable job-application assistant using Claude Projects, ChatGPT Projects, or Gemini Notebooks. No install, no API key. Your resume and writing samples live in your platform's project files; the assistant builds a voice fingerprint from them.
