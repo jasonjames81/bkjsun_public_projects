@@ -30,3 +30,10 @@ def test_inject_replaces_region_and_is_idempotent():
     assert once == "X<!-- INJECT:foo -->NEW<!-- /INJECT:foo -->Y"
     twice = bs.inject(once, "foo", "NEW")
     assert twice == once
+
+
+def test_inject_preserves_backslashes():
+    html = "<!-- INJECT:b -->X<!-- /INJECT:b -->"
+    block = bs.render_block(r"path C:\Users \d+ \1 done")
+    out = bs.inject(html, "b", block)
+    assert r"C:\Users" in out and r"\d+" in out and r"\1" in out

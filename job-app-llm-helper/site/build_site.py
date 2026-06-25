@@ -30,10 +30,10 @@ def extract_below_divider(md: str) -> str:
 
 def extract_message_body(md: str) -> str:
     """Return the text between the first and second lines that are exactly '---'."""
-    idx = [i for i, line in enumerate(md.splitlines()) if line.strip() == "---"]
+    lines = md.splitlines()
+    idx = [i for i, line in enumerate(lines) if line.strip() == "---"]
     if len(idx) < 2:
         raise ValueError("expected two '---' fences")
-    lines = md.splitlines()
     return "\n".join(lines[idx[0] + 1 : idx[1]]).strip()
 
 
@@ -50,7 +50,7 @@ def inject(html: str, name: str, block_html: str) -> str:
     )
     if not pattern.search(html):
         raise ValueError(f"marker for {name!r} not found in index.html")
-    return pattern.sub(rf"\g<1>{block_html}\g<2>", html, count=1)
+    return pattern.sub(lambda m: m.group(1) + block_html + m.group(2), html, count=1)
 
 
 _EXTRACTORS = {
