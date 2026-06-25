@@ -365,12 +365,30 @@ Walk me through it.</pre><!-- /INJECT:interview-prep -->
       var target = document.getElementById(btn.getAttribute('data-copy'));
       var pre = target && target.querySelector('pre.paste-block');
       if (!pre) return;
-      navigator.clipboard.writeText(pre.innerText).then(function () {
-        var label = btn.textContent;
-        btn.textContent = 'Copied ✓';
+      var label = btn.textContent;
+      function flash(text) {
+        btn.textContent = text;
         btn.classList.add('done');
         setTimeout(function () { btn.textContent = label; btn.classList.remove('done'); }, 1600);
-      });
+      }
+      function selectFallback() {
+        // navigator.clipboard is unavailable over file:// and other non-secure
+        // contexts — select the text so the user can copy with Ctrl/Cmd+C.
+        var range = document.createRange();
+        range.selectNodeContents(pre);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = 'Press Ctrl/Cmd+C';
+        setTimeout(function () { btn.textContent = label; }, 2600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pre.innerText).then(function () {
+          flash('Copied ✓');
+        }).catch(selectFallback);
+      } else {
+        selectFallback();
+      }
     });
   });
 </script>
