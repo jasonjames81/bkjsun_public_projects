@@ -27,7 +27,7 @@ All three work great on free tier. Paid adds more files and better models.
 
 1. Pick your platform → [Claude](platform-guide/setup-claude.md) | [ChatGPT](platform-guide/setup-chatgpt.md) | [Gemini](platform-guide/setup-gemini.md)
 2. Follow the setup guide — create a Project/Notebook, upload resume + writing samples, paste project instructions (the assistant builds your voice fingerprint on first run)
-3. Paste the [kickoff message](platform-guide/kickoff-template.md) with the job posting to start
+3. Paste the [kickoff message](platform-guide/kickoff-template.md) with the job posting to start — or, if you only need to prep for an interview on a role you applied to elsewhere, paste the [interview-prep message](platform-guide/interview-prep-template.md) instead
 
 **Link-fetch note:** If a URL fails to load, the LLM will ask you to paste the text instead. This is normal — paste the job description directly when that happens.
 

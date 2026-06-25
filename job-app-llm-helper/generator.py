@@ -364,9 +364,7 @@ def answer_application_questions(
     for i, q in enumerate(questions, 1):
         limit = q.get("limit")
         if limit:
-            cap_str = (
-                f"  [LIMIT: {limit.get('value', '?')} {limit.get('unit', 'words')}]"
-            )
+            cap_str = f"  [LIMIT: {limit.get('value', '?')} {limit.get('unit', 'words')}]"
         else:
             cap_str = f"  [LIMIT: {_DEFAULT_ANSWER_LIMIT}]"
         questions_block_lines.append(f"{i}. {q['question']}{cap_str}")
@@ -528,7 +526,9 @@ Constraints:
     return polished or draft
 
 
-def _format_experience_section(name: str, experience_answers, *, add_use_prompt: bool = False) -> str:
+def _format_experience_section(
+    name: str, experience_answers, *, add_use_prompt: bool = False
+) -> str:
     if not experience_answers:
         return ""
     suffix = " (USE THESE)" if add_use_prompt else ""
@@ -653,7 +653,7 @@ Provide:
 - Match score (0-100) with a one-sentence explanation
 - Top 3 strengths the applicant brings to this role
 - Top 2-3 likely concerns the hiring side will raise, each with a concrete reframe
-- 4-5 interview talking points grounded in the applicant's real experience
+- 4-5 interview talking points grounded in the applicant's real experience. For each, mark how strongly the applicant's own materials support it — **Strong** (clear evidence in resume/stories), **Moderate** (partial or related evidence), or **Thin** (needs a concrete example the applicant should prepare) — so the applicant knows what is solid and what to shore up before the interview.
 
 Format your response with clear headers using ## for main sections and --- for subsections.
 Do not invent numbers, organizations, dates, or stories beyond what the materials show."""
@@ -816,6 +816,10 @@ No prose outside the JSON. No markdown fences."""
     try:
         response = call_llm(prompt)
         data = _extract_json(response, array=False)
-        return {"success": True, "feedback": data.get("feedback", ""), "next_question": data.get("next_question", "")}
+        return {
+            "success": True,
+            "feedback": data.get("feedback", ""),
+            "next_question": data.get("next_question", ""),
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
