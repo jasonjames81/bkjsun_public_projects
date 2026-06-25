@@ -37,3 +37,12 @@ def test_inject_preserves_backslashes():
     block = bs.render_block(r"path C:\Users \d+ \1 done")
     out = bs.inject(html, "b", block)
     assert r"C:\Users" in out and r"\d+" in out and r"\1" in out
+
+
+def test_committed_index_html_is_current():
+    """The committed index.html must equal a fresh build from the source markdown."""
+    project_dir = SITE.parent
+    current = (SITE / "index.html").read_text(encoding="utf-8")
+    assert bs.build(project_dir) == current, (
+        "site/index.html is stale — run `python site/build_site.py` and commit the result"
+    )
