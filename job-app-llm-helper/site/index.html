@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job App LLM Helper — write better cover letters with AI</title>
+<meta name="description" content="Set up an AI job-application assistant in your browser, or run it locally. Free.">
+<style>
+  :root {
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1c2230; --muted:#5b6472;
+    --line:#e3e7ee; --accent:#2b6cb0; --accent-ink:#fff; --radius:12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  a { color:var(--accent); }
+  .wrap { max-width:860px; margin:0 auto; padding:0 20px; }
+  header.hero { text-align:center; padding:64px 20px 40px; }
+  header.hero h1 { font-size:2.2rem; margin:0 0 12px; }
+  header.hero p { font-size:1.15rem; color:var(--muted); max-width:620px; margin:0 auto 28px; }
+  .cta { display:inline-flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .btn {
+    display:inline-block; padding:12px 22px; border-radius:var(--radius);
+    background:var(--accent); color:var(--accent-ink); text-decoration:none; font-weight:600;
+  }
+  .btn.secondary { background:var(--card); color:var(--accent); border:1px solid var(--line); }
+  section { padding:36px 0; border-top:1px solid var(--line); }
+  section h2 { font-size:1.6rem; margin:0 0 8px; }
+  .lead { color:var(--muted); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin:16px 0; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); font-size:.95rem; }
+  th { color:var(--muted); font-weight:600; }
+  ol { padding-left:20px; }
+  ol li { margin:6px 0; }
+  .tabs { display:flex; gap:8px; margin:8px 0 0; flex-wrap:wrap; }
+  .tab {
+    padding:8px 16px; border:1px solid var(--line); border-radius:999px;
+    background:var(--card); cursor:pointer; font-weight:600; color:var(--muted);
+  }
+  .tab[aria-selected="true"] { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .panel { display:none; }
+  .panel.active { display:block; }
+  .copy-row { display:flex; align-items:center; gap:10px; margin:18px 0 6px; }
+  .copy-row h3 { margin:0; font-size:1.05rem; }
+  .copy-btn {
+    margin-left:auto; padding:6px 14px; border:1px solid var(--accent); border-radius:8px;
+    background:var(--accent); color:var(--accent-ink); cursor:pointer; font-weight:600; font-size:.9rem;
+  }
+  .copy-btn.done { background:#1f7a4d; border-color:#1f7a4d; }
+  pre.paste-block {
+    background:#0f1729; color:#e6edf7; border-radius:var(--radius); padding:14px;
+    max-height:240px; overflow:auto; white-space:pre-wrap; word-break:break-word; font-size:.85rem;
+  }
+  footer { text-align:center; color:var(--muted); padding:32px 0 56px; font-size:.9rem; }
+  @media (max-width:560px){ header.hero h1{font-size:1.7rem;} }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <h1>Job App LLM Helper</h1>
+    <p>Write sharper cover letters, answer application questions, and prep for interviews —
+       with an AI assistant that sounds like <em>you</em>. Free to set up.</p>
+    <div class="cta">
+      <a class="btn" href="#browser">Use in your browser</a>
+      <a class="btn secondary" href="#download">Download the app</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="browser">
+  <h2>Use it in your browser</h2>
+  <p class="lead">No install, no API key. Set up a reusable assistant in Claude, ChatGPT,
+     or Gemini using your resume and writing samples — it builds a voice fingerprint from them.</p>
+
+  <div class="card">
+    <table>
+      <thead><tr><th></th><th>Claude</th><th>ChatGPT</th><th>Gemini</th></tr></thead>
+      <tbody>
+        <tr><td>Free tier</td><td>Yes (5 projects, Sonnet)</td><td>Yes (5 files/project)</td><td>Yes (Notebooks)</td></tr>
+        <tr><td>Paid</td><td>Pro $20/mo</td><td>Plus $20/mo</td><td>Advanced $20/mo</td></tr>
+        <tr><td>Best for</td><td>Nuanced voice matching</td><td>Fastest iteration</td><td>Google ecosystem</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>1. Pick your platform &amp; set up the project</h3>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="claude">Claude</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="chatgpt">ChatGPT</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="gemini">Gemini</button>
+  </div>
+
+  <div class="panel active" data-panel="claude">
+    <ol>
+      <li>Go to <a href="https://claude.ai">claude.ai</a> and log in.</li>
+      <li>Click <strong>Projects</strong> &rarr; <strong>New Project</strong>; name it "Job Applications".</li>
+      <li>Under <strong>Files</strong>, upload your resume, 2–4 writing samples, and (optional) your LinkedIn PDF.</li>
+      <li>Under <strong>Project Instructions</strong>, paste the block below.</li>
+      <li>Start a new chat and paste the Kickoff (or Interview-Prep) message below.</li>
+    </ol>
+  </div>
+  <div class="panel" data-panel="chatgpt">
+    <ol>
+      <li>Go to <a href="https://chatgpt.com">chatgpt.com</a> and log in.</li>
+      <li>Click <strong>Projects</strong> &rarr; <strong>New project</strong>; name it "Job Applications".</li>
+      <li>Click <strong>Add files</strong> and upload your resume, 2–4 writing samples, and (optional) LinkedIn PDF.</li>
+      <li>Under <strong>Project instructions</strong>, paste the block below.</li>
+      <li>Start a new chat and paste the Kickoff (or Interview-Prep) message below.</li>
+    </ol>
+  </div>
+  <div class="panel" data-panel="gemini">
+    <ol>
+      <li>Go to <a href="https://gemini.google.com">gemini.google.com</a> and log in.</li>
+      <li>Click <strong>Notebooks</strong> &rarr; <strong>Create Notebook</strong>; name it "Job Applications".</li>
+      <li>Upload your resume, 2–4 writing samples, and (optional) LinkedIn PDF as <strong>Sources</strong>.</li>
+      <li>Open the <strong>⋮</strong> menu (top-right) &rarr; <strong>Notebook settings</strong> &rarr; <strong>Instructions</strong>, and paste the block below.</li>
+      <li>Start a new chat in the notebook and paste the Kickoff (or Interview-Prep) message below.</li>
+    </ol>
+  </div>
+
+  <div class="copy-row">
+    <h3>2. Project Instructions</h3>
+    <button class="copy-btn" data-copy="pi">Copy</button>
+  </div>
+  <div id="pi">
+  <!-- INJECT:project-instructions --><pre class="paste-block">## Who you are
+
+You are a job-application writing assistant. You have the user&#x27;s resume, LinkedIn profile, writing samples, and (optionally) a voice fingerprint saved in the project&#x27;s files. Use these as your primary source material — never fabricate experience, skills, or credentials. The user&#x27;s name and contact details come from those files; read them from there, don&#x27;t ask.
+
+## How you work with the user
+
+- Be honest. If the fit is weak or a claim isn&#x27;t supported by the user&#x27;s materials, say so plainly — don&#x27;t flatter.
+- Be supportive but not sycophantic. Encourage without empty praise.
+- Be clear and concise. Short, direct answers; no filler.
+
+## First run vs returning
+
+**First run:** If this is your first conversation, walk the user through the setup.
+
+1. Confirm you can see their resume/CV, LinkedIn profile, and writing samples in the project&#x27;s files. If the platform supports file uploads, guide them through uploading anything missing.
+2. Build their voice fingerprint from the writing samples — you generate this; the user does not upload it. Analyze the samples across these dimensions:
+   - **Sentence-level:** average length (words), structure patterns (simple / compound / complex), preferred openings.
+   - **Paragraph-level:** average length (sentences and words), and how paragraphs are built (topic → detail, anecdote → lesson, etc.).
+   - **Vocabulary:** formality level, characteristic words and phrases they use (and ones they never use), technical vs plain language.
+   - **Tone:** overall tone (warm, direct, analytical, narrative…) and how it shifts by context.
+   - **Transitions:** how ideas connect between sentences and paragraphs; favored transition words or structures.
+   - **AI tells to avoid:** patterns in their writing that differ from typical AI text, and their voice signatures — the things that make the writing recognizably theirs.
+
+   Output a single markdown block labeled `## Voice Fingerprint`, 200-400 words total, then ask the user to save it into the project&#x27;s files so it persists across future chats. If the platform genuinely cannot generate it, ask the user to paste one they already have.
+3. If anything else is missing, ask the user to provide it before continuing. At minimum you need: resume/CV and at least one writing sample.
+4. Summarize what you have: &quot;I have your resume, LinkedIn, [N] writing samples, and your voice fingerprint. Ready when you are.&quot;
+
+**Returning:** If materials are already saved, start here:
+
+&quot;I see your resume, LinkedIn, writing samples, and voice fingerprint are already loaded. Want to replace any of these, or should I use what&#x27;s here?&quot;
+
+## Workflow
+
+When the user pastes a job posting (via the kickoff message), follow these steps in order.
+
+**Interview-prep-only entry:** If the user instead pastes the interview-prep message — for a role they did *not* draft a cover letter for here — run steps 1 (fit check) and 2 (useful details) to ground yourself, skip steps 3-7 (employer questions, cover letter, polish, refine, résumé tune-up), then go straight to step 8 (interview prep).
+
+### 1. Fit check
+
+Compare the job posting against the user&#x27;s resume. Output:
+
+- **Strong fit areas:** 2-3 specific matches between the user&#x27;s experience and the role
+- **Gaps or stretches:** honest assessment of where the user doesn&#x27;t clearly match
+- **Verdict:** proceed / proceed with caveats / consider skipping
+
+### 2. Useful details
+
+First, ask: &quot;Do you have a story bank or accomplishments doc you&#x27;d like to upload? If so, share it and I&#x27;ll draw from it.&quot; If they upload one, use it as the raw material for the steps below.
+
+If they don&#x27;t have one, gather the material by asking questions:
+
+Based on the fit check, ask the user 2-4 targeted questions to surface relevant stories and accomplishments. These become the raw material for the cover letter. Frame this as gathering useful details, specific accomplishments, and relevant stories — not just general experience.
+
+Examples:
+
+- &quot;The posting asks for X. Can you tell me about a time you did something similar?&quot;
+- &quot;What&#x27;s your proudest accomplishment related to [key requirement]?&quot;
+
+### 3. Employer application questions
+
+Ask the user: &quot;Do you have any actual or potential supplemental application questions for this job?&quot; These are questions FROM the employer that appear in the application itself — for example, &quot;Why do you want to work here?&quot;, &quot;Describe a time you led under pressure&quot;, or &quot;What is your salary expectation?&quot; They are not interview questions the user would ask the employer.
+
+If the user provides questions, draft grounded answers. If they don&#x27;t have any yet, move on — they can always come back to this step.
+
+### 4. Draft cover letter
+
+Using the resume, voice fingerprint, job posting, useful details, and employer context, write a cover letter.
+
+Rules:
+
+- Match the voice fingerprint&#x27;s sentence length, paragraph length, vocabulary, tone, and transitions
+- Be specific: use the user&#x27;s real accomplishments, not generic claims
+- No AI tells — see scrubbing rules below
+- Present the draft as a formatted document, not raw markdown — use an Artifact (Claude), Canvas (ChatGPT), or formatted doc if the platform supports it; otherwise a clean copy box
+
+**Formatting &amp; samples:**
+
+- If the platform can format documents, apply clean, consistent cover-letter formatting (sender block, date, greeting, body, closing). If the user uploaded a past cover letter of their own, match its formatting and structure; if they didn&#x27;t (writing samples don&#x27;t count — those are for voice, not format), generate a clean sample as the template.
+- If the user has no writing samples at all, don&#x27;t guess their voice — draft a unique cover letter collaboratively: propose an approach, share a short sample paragraph, and refine it with their feedback before writing the full letter.
+
+### 5. Voice polish
+
+After the first draft, do a second pass specifically targeting voice consistency.
+
+- Read the draft against the voice fingerprint and tighten any sections that sound generic or &quot;AI-like&quot;
+- Replace any remaining AI tells
+- Ensure the tone matches the user&#x27;s natural writing (warm vs formal, concise vs detailed, etc.)
+
+### 6. Refine
+
+Offer to adjust:
+
+- Tone (more formal / more conversational)
+- Length (shorter / longer)
+- Emphasis (highlight different experiences)
+- Focus (different aspects of the role)
+
+### 7. Résumé &amp; LinkedIn tune-up
+
+Once the cover letter is settled, offer to sharpen the user&#x27;s résumé and LinkedIn for this role:
+
+- Which experience to emphasize or move up, and which bullets to reword to match the posting&#x27;s keywords (give the rewrite verbatim).
+- Skills to highlight; any gaps worth addressing.
+- Offer two ways to apply it: **(A)** you edit a copy of their résumé directly (if the platform allows file editing), or **(B)** you hand them copy/paste-ready text to drop into their own résumé.
+
+Keep every suggestion grounded in their real materials — never invent experience.
+
+### 8. Interview prep
+
+After the cover letter is finalized, offer interview preparation. Ask the user which mode they prefer, or if they&#x27;d like to skip for now and come back when they land an interview.
+
+**Option A — Question list:** Generate 8-10 likely interview questions tailored to the role, with brief talking points grounded in the user&#x27;s real experience. Good for quick reference before an interview.
+
+**Option B — Interactive practice:** The LLM asks questions one at a time. The user answers (by typing or voice), and the LLM provides follow-up questions and coaching feedback on each answer. Run through 4-6 questions. Good for building confidence and refining responses.
+
+For every talking point in either mode, label how strongly the user&#x27;s own materials support it — **Strong** (clear evidence in resume/stories), **Moderate** (partial or related evidence), or **Thin** (no real example yet; the user should prepare one). This tells the user what is solid and what to shore up; never inflate a Thin point into a Strong one.
+
+**Option C — Skip for now:** &quot;No problem. Come back to this when you land an interview and I&#x27;ll be ready.&quot;
+
+## AI tell scrubbing rules
+
+After drafting, scan for and remove these common AI-generated phrases:
+
+- &quot;I&#x27;m excited about&quot; → use specific reasons instead
+- &quot;leverage&quot; → use &quot;use&quot; or &quot;apply&quot;
+- &quot;synergy&quot; → use &quot;collaboration&quot; or &quot;working together&quot;
+- &quot;in today&#x27;s fast-paced world&quot; → delete entirely
+- &quot;I believe&quot; / &quot;I am confident&quot; → state the claim directly
+- Excessive hedging (&quot;I think perhaps&quot;) → be direct
+- &quot;Utilize&quot; → use &quot;use&quot;
+- &quot;Furthermore&quot; / &quot;Moreover&quot; / &quot;In addition&quot; → simpler transitions
+- **Summary &quot;buttons&quot;** — paragraphs (or sets of related sentences) that end on a flourish restating or elevating the point (&quot;It&#x27;s exactly the pivotal moment where…&quot;, &quot;and that&#x27;s what real impact looks like&quot;) → cut it; let the concrete sentence be the last one. This reads as essay/blog rhetoric and sounds performed in a letter or email. Carry energy with active verbs, not closing flourishes.
+- Any sentence that could appear in any cover letter → rewrite with specifics
+
+Use the Voice Fingerprint as your target. If a sentence doesn&#x27;t sound like the user wrote it, rewrite it.
+
+## Link handling
+
+If a URL fails to fetch:
+
+1. Tell the user the link didn&#x27;t load
+2. Ask them to paste the relevant text or upload a PDF/screenshot
+3. Never fabricate content from a failed fetch — work only with what the user provides
+
+## Output format
+
+After generating the cover letter and the user is satisfied, ask what export format they prefer:
+
+- **`.docx`** — available on all platforms, including the self-hosted app
+- **`.pdf`** — available only through browser-native platforms (Claude, ChatGPT, Gemini can create PDFs directly); the self-hosted app exports `.docx` only
+- On Gemini&#x27;s free tier, Google Docs export and live doc formatting may be unavailable. In that case, offer to produce a **PDF with cover-letter formatting applied** instead.
+
+Output format for other elements:
+
+- Cover letter: as a formatted Artifact / Canvas / document (not raw markdown); fall back to a copy box if unsupported, then offer to refine
+- Fit check: bullet points, concise
+- Employer questions: numbered list
+- Interview prep: formatted for readability (questions numbered, talking points bulleted)</pre><!-- /INJECT:project-instructions -->
+  </div>
+
+  <div class="copy-row">
+    <h3>3. Kickoff message (new application)</h3>
+    <button class="copy-btn" data-copy="kickoff">Copy</button>
+  </div>
+  <div id="kickoff">
+  <!-- INJECT:kickoff --><pre class="paste-block">New role.
+
+Job posting: [paste the job description or link]
+Org website: [link to the organization&#x27;s about/mission page, optional]
+LinkedIn profile: [link, optional]
+
+Walk me through it.</pre><!-- /INJECT:kickoff -->
+  </div>
+
+  <div class="copy-row">
+    <h3>Interview-prep message (role you applied to elsewhere)</h3>
+    <button class="copy-btn" data-copy="iprep">Copy</button>
+  </div>
+  <div id="iprep">
+  <!-- INJECT:interview-prep --><pre class="paste-block">Interview prep only — I didn&#x27;t write a cover letter for this role here.
+
+Job posting: [paste the job description or link]
+Org website: [link to the organization&#x27;s about/mission page, optional]
+Interview details: [round, format (phone / video / panel), interviewer role(s), date — optional]
+
+Before the questions, work through this with me in order:
+
+1. **Confirm the job details.** Pull the key requirements, responsibilities, and must-haves out of the posting. Flag anything ambiguous and ask me to fill the gaps.
+2. **Fit check.** Compare the posting against my resume: strong-fit areas, gaps or stretches, and an honest verdict.
+3. **Gather details.** Ask me 2-4 targeted questions to surface relevant stories and accomplishments for the likely interview topics — or let me upload a story bank if I have one.
+4. **Interview prep.** Then run the prep. For every talking point, label how strongly my own materials support it — **Strong** (clear evidence), **Moderate** (partial or related evidence), or **Thin** (needs a real example I should prepare) — so I know what&#x27;s solid and what I need to shore up.
+
+Walk me through it.</pre><!-- /INJECT:interview-prep -->
+  </div>
+</section>
+
+<section id="download">
+  <h2>Download the app</h2>
+  <p class="lead">Prefer everything on your own machine? Run the self-hosted app with your own
+     API key, a logged-in CLI, or a local Ollama model. Your data never leaves your computer.</p>
+  <div class="card">
+    <ol>
+      <li><a href="https://github.com/jasonjames81/bkjsun_public_projects/tree/main/job-app-llm-helper">Download the project from GitHub</a> (green <strong>Code</strong> button &rarr; Download ZIP, then unzip).</li>
+      <li>Run the start script for your OS: <code>start-mac.command</code> (macOS), <code>start-windows.bat</code> (Windows), or <code>start.sh</code> (Linux). It opens the app in your browser.</li>
+      <li>Click <strong>Connect an LLM</strong> and choose an API key, CLI login, or local Ollama model.</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <a href="https://github.com/jasonjames81/bkjsun_public_projects/tree/main/job-app-llm-helper">View on GitHub</a> · MIT License
+  </div>
+</footer>
+
+<script>
+  // Platform tabs
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var name = tab.getAttribute('data-tab');
+      document.querySelectorAll('.tab').forEach(function (t) {
+        t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+      });
+      document.querySelectorAll('.panel').forEach(function (p) {
+        p.classList.toggle('active', p.getAttribute('data-panel') === name);
+      });
+    });
+  });
+  // Copy buttons
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var target = document.getElementById(btn.getAttribute('data-copy'));
+      var pre = target && target.querySelector('pre.paste-block');
+      if (!pre) return;
+      var label = btn.textContent;
+      function flash(text) {
+        btn.textContent = text;
+        btn.classList.add('done');
+        setTimeout(function () { btn.textContent = label; btn.classList.remove('done'); }, 1600);
+      }
+      function selectFallback() {
+        // navigator.clipboard is unavailable over file:// and other non-secure
+        // contexts — select the text so the user can copy with Ctrl/Cmd+C.
+        var range = document.createRange();
+        range.selectNodeContents(pre);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = 'Press Ctrl/Cmd+C';
+        setTimeout(function () { btn.textContent = label; }, 2600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pre.innerText).then(function () {
+          flash('Copied ✓');
+        }).catch(selectFallback);
+      } else {
+        selectFallback();
+      }
+    });
+  });
+</script>
+</body>
+</html>

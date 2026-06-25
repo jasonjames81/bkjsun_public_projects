@@ -8,4 +8,4 @@ ignore = [
 ]
 
 [lint.per-file-ignores]
-"tests/*" = ["E402"]  # sys.path manipulation in test files
+"tests/*" = ["E402", "S101"]  # sys.path manipulation in test files; assert usage in pytest
