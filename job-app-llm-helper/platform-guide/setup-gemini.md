@@ -5,7 +5,7 @@ One-time setup (~10 minutes). Free tier works great.
 ## Steps
 
 1. Go to [gemini.google.com](https://gemini.google.com) and sign up or log in
-2. Click **Notebooks** in the left sidebar → **Create Notebook**
+2. Click **Notebooks** in the left sidebar → **New notebook**
 3. Name it something like "Job Applications"
 4. Upload your core assets as **Sources**:
    - Your resume/CV (PDF or DOCX)

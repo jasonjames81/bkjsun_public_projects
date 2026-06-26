@@ -6,8 +6,8 @@ One-time setup (~10 min). Free tier works.
 
 1. Go to [chatgpt.com](https://chatgpt.com) and sign up or log in
 2. Click **Projects** in the left sidebar → **New project**
-3. Name it something like "Job Applications"
-4. Click **Add files** and upload:
+3. Name it something like "Job Applications", then click **Create project**
+4. In the project, click **Add files** and upload:
    - Your resume/CV
    - *(Optional)* LinkedIn profile — to include it, open your own profile on linkedin.com, click **More → Save to PDF**, then upload that PDF. (A URL or exported text also works.)
    - 2-4 recent writing samples — ideally past cover letters and reports (essays, blog posts, or emails also work), anything in your natural voice. The assistant uses these to build your voice fingerprint on first run, and matches a cover letter's formatting if you include one.
