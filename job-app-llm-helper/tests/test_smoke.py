@@ -154,6 +154,25 @@ def test_generate_cover_letter_excludes_coaching_sections(client, monkeypatch):
     assert "INTERVIEW" not in body["content"].upper()
 
 
+def test_prompts_carry_2026_tells(monkeypatch):
+    constraints = generator._hard_constraints("Ada")
+    assert "flag importance" in constraints
+    assert "elevating contrast" in constraints
+
+    captured = {}
+
+    def fake(prompt, **kw):
+        captured["prompt"] = prompt
+        return "ok"
+
+    monkeypatch.setattr(generator, "call_llm", fake)
+    generator.polish_cover_letter(
+        "Dear Team,\n\nI built the thing.\n\nBest,\nAda", SAMPLE_PROFILE
+    )
+    assert "Importance-flagging" in captured["prompt"]
+    assert "Elevating contrast" in captured["prompt"]
+
+
 def test_generate_appends_employer_qa(client, monkeypatch):
     """Drafted employer answers are appended verbatim as a section after the letter."""
     monkeypatch.setattr(
