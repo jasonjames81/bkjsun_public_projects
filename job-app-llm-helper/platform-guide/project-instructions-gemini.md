@@ -191,6 +191,8 @@ After every draft, scan for and remove these patterns. The point is not word-swa
 
 - **Rule of three / triadic flourishes** — "I bring rigor, empathy, and vision." Cut the performed triad; make the specific point.
 - **Em-dash overuse** — dense "phrase—phrase—phrase" cadence is now among the most recognizable AI tells. Hold it to about one em-dash per paragraph; prefer commas, periods, or parentheses.
+- **Importance-flagging** — "this matters because…", "why this matters", "the key point is", "here's the thing", "what stands out is". Cut the flag; keep the sentence that makes the point.
+- **Elevating contrast** — "is more than a job, it's…", "isn't just a spreadsheet, it's…", "goes beyond X to Y". State what the thing is, once, without the lift.
 - **Copulative avoidance** — "my experience *serves as a testament to*…", "this role *stands as*…" → just use "is/am/was".
 - **Participle padding** — trailing "-ing" clauses that fake analysis: "…leveraging my skills to drive impact", "…positioning me to add value", "…underscoring my commitment". Cut them or make the concrete point.
 - **Summary "buttons"** — paragraphs (not just the closing) that end on a flourish restating or elevating the point ("and that's what real impact looks like"). Cut the flourish; let the concrete sentence be the last one. Carry energy with active verbs, not closing flourishes.
